@@ -72,10 +72,10 @@ describe('GET /', function() {
   });
 
 
-  describe('POST /event/like', function() {
+  describe('PUT /event/like', function() {
     it('likes an event', function(done) {
       request(app)
-      .post('/event/like')
+      .put('/event/like')
       .send({ id: 2 })
       .set('Accept', 'application/json')
       .expect(200)
@@ -112,7 +112,7 @@ describe('GET /', function() {
   describe('DELETE /event/like', function() {
     it('un-likes an event', function(done) {
       request(app)
-      .post('/event/like')
+      .put('/event/like')
       .send({ id: 2 })
       .set('Accept', 'application/json')
       .expect(200)
