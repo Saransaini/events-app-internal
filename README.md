@@ -1,20 +1,33 @@
 # Tinder for Dogs
 
-A dog-matching app supporting three intents — **playdates**, **breeding**, and
-**adoption** — built as an Express/Firestore backend (`/`) plus an Expo/React
-Native mobile client (`/mobile`).
+A dating app for dog owners — people match with people, with each person's
+dog as the centerpiece of their profile. The idea: two dog owners ("dog mom",
+dog dad") match, go on a date, and if the romantic spark isn't there, their
+dogs can still have a playdate. Built as an Express/Firestore backend (`/`)
+plus an Expo/React Native mobile client (`/mobile`).
 
 ## Backend (`/`)
 
 Express + Firestore, structured under `src/`:
 
-- `src/routes/events.js` — the original events feature (unchanged).
-- `src/routes/users.js`, `dogs.js`, `swipes.js`, `matches.js` — the dog-matching API.
-- `src/services/matchService.js` — match-creation logic. Playdate/breeding
-  require a reciprocal like from both dogs; adoption creates a match
-  immediately on a single like, since a shelter listing can't swipe back.
+- `src/routes/events.js` — the original events feature (unchanged, unrelated
+  to this app).
+- `src/routes/users.js` — profile CRUD (a person's profile always embeds
+  their dog), the nearby-people discovery feed, and a public profile lookup
+  (`GET /users/:id`) used to show who a match is with.
+- `src/routes/swipes.js` — records a like/pass and checks for a match.
+- `src/routes/matches.js` — list/get matches for the signed-in user.
+- `src/services/matchService.js` — a match is created once both people have
+  liked each other (always reciprocal — no asymmetric/listing case, unlike an
+  earlier version of this app that matched dogs directly).
 - `src/middleware/requireAuth.js` — verifies a Firebase ID token
   (`Authorization: Bearer <token>`) via `firebase-admin`.
+
+Chat deliberately bypasses this API: the mobile client reads/writes
+`matches/{matchId}/messages` directly via the Firebase client SDK for
+realtime delivery, scoped by `firestore.rules` to the two matched
+participants (everything else stays behind the Express API, which uses the
+Admin SDK and bypasses rules entirely).
 
 ### Setup
 
@@ -31,10 +44,10 @@ export GOOGLE_CLOUD_PROJECT=your-project-id
 npm start   # listens on PORT (default 8082)
 ```
 
-Deploy composite indexes (needed for the discover/matches queries) with:
+Deploy indexes and security rules with:
 
 ```bash
-npx firebase-tools deploy --only firestore:indexes
+npx firebase-tools deploy --only firestore:indexes,firestore:rules
 ```
 
 ### Tests
@@ -46,9 +59,9 @@ npm run test:emulator
 ```
 
 This starts the emulator, runs `npm test` (Mocha/Chai/Supertest) against it,
-and tears it down. `test/*.test.js` cover the dogs/swipes/matches/users API
-using an `x-test-uid` header to bypass real Firebase Auth tokens in
-`NODE_ENV=test` (see `src/middleware/requireAuth.js`).
+and tears it down. `test/*.test.js` cover the users/swipes/matches API using
+an `x-test-uid` header to bypass real Firebase Auth tokens in `NODE_ENV=test`
+(see `src/middleware/requireAuth.js`).
 
 The original `test/test-server.js` (events) has 4 known-failing cases
 unrelated to this feature — a pre-existing mock-data assumption in that test
@@ -59,11 +72,15 @@ file that predates this work.
 Expo (managed workflow) + TypeScript, using Expo Router for navigation.
 
 - `app/(auth)` — login/signup
-- `app/(onboarding)` — dog profile creation wizard (basic info → photos → intents → location)
-- `app/(tabs)` — Discover (swipe deck), Matches, Profile
-- `app/match/[id].tsx` — match placeholder screen (no chat yet)
-- `src/lib/api.ts` — typed fetch client for the backend, attaches the Firebase ID token
-- `src/lib/firebase.ts` — Firebase client SDK init (Auth + Storage)
+- `app/(onboarding)` — profile creation wizard (dog's basic info → photos →
+  what you're looking for → location)
+- `app/(tabs)` — Discover (swipe deck of people), Matches, Profile
+- `app/match/[id].tsx` — real-time chat with a match (Firestore-backed)
+- `src/lib/api.ts` — typed fetch client for the backend, attaches the
+  Firebase ID token
+- `src/lib/firebase.ts` — Firebase client SDK init (Auth + Storage +
+  Firestore)
+- `src/lib/chat.ts` — direct Firestore reads/writes for chat messages
 
 ### Setup
 
@@ -86,11 +103,14 @@ npx expo-doctor     # config/dependency sanity
 
 ## Known limitations (v1)
 
-- No in-app chat — matches show a placeholder screen.
-- No push notifications, payments, or shelter/admin dashboard.
-- Single dog profile per owner assumed by the mobile UI (backend supports
-  multiple dogs per owner via `GET /dogs/mine`).
-- Discover feed excludes already-swiped dogs via an in-memory filter rather
+- No push notifications, payments, or a shelter/admin dashboard.
+- One dog per person profile (a person must have a dog to use the app; no
+  multi-dog households yet).
+- "Looking for" (dating / playdate) is descriptive metadata on a profile, not
+  a filter — discovery shows all nearby active people regardless of what
+  they're open to.
+- Discover feed excludes already-swiped people via an in-memory filter rather
   than a Firestore-side query, since Firestore can't do an efficient
   server-side "not in" exclusion at scale — fine for v1, worth revisiting if
-  the dog count per region grows large.
+  the user count per region grows large.
+- No "unmatch" or block/report flow yet.
