@@ -4,9 +4,8 @@ import { useOnboardingStore } from '../../src/store/onboardingStore';
 import type { Intent } from '../../src/types/models';
 
 const OPTIONS: { value: Intent; label: string; description: string }[] = [
-  { value: 'playdate', label: 'Playdates', description: 'Find nearby dogs to hang out and play with' },
-  { value: 'breeding', label: 'Breeding', description: 'Find a breeding match' },
-  { value: 'adoption', label: 'Adoption', description: 'List this dog for adoption' },
+  { value: 'dating', label: 'Dating', description: "Meet someone to go on a date with (bring the dog!)" },
+  { value: 'playdate', label: 'Playdates', description: 'Open to just a dog playdate too, no pressure' },
 ];
 
 export default function Intents() {

@@ -1,5 +1,5 @@
 import { auth } from './firebase';
-import type { Dog, Intent, Match, SwipeResult, UserProfile } from '../types/models';
+import type { Dog, Intent, LatLng, Match, SwipeResult, UserProfile } from '../types/models';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8082';
 
@@ -23,38 +23,34 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+interface ProfileUpdate {
+  displayName?: string;
+  email?: string;
+  dog?: Partial<Dog>;
+  intents?: Intent[];
+  location?: LatLng;
+}
+
 export const api = {
-  upsertMe: (body: { displayName?: string; email?: string; location?: { lat: number; lng: number } }) =>
-    request<UserProfile>('/users/me', { method: 'POST', body: JSON.stringify(body) }),
+  upsertMe: (body: ProfileUpdate) => request<UserProfile>('/users/me', { method: 'POST', body: JSON.stringify(body) }),
   getMe: () => request<UserProfile>('/users/me'),
+  updateMyProfile: (body: ProfileUpdate) =>
+    request<UserProfile>('/users/me', { method: 'PATCH', body: JSON.stringify(body) }),
 
-  createDog: (body: Partial<Dog>) => request<Dog>('/dogs', { method: 'POST', body: JSON.stringify(body) }),
-  getMyDogs: () => request<{ dogs: Dog[] }>('/dogs/mine'),
-  updateDog: (id: string, body: Partial<Dog>) =>
-    request<Dog>(`/dogs/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
-
-  discoverDogs: (params: {
-    dogId: string;
-    intent: Intent;
-    lat: number;
-    lng: number;
-    radiusKm?: number;
-    limit?: number;
-  }) => {
+  discoverPeople: (params: { lat: number; lng: number; radiusKm?: number; limit?: number }) => {
     const query = new URLSearchParams({
-      dogId: params.dogId,
-      intent: params.intent,
       lat: String(params.lat),
       lng: String(params.lng),
       ...(params.radiusKm ? { radiusKm: String(params.radiusKm) } : {}),
       ...(params.limit ? { limit: String(params.limit) } : {}),
     });
-    return request<{ dogs: Dog[] }>(`/dogs/discover?${query.toString()}`);
+    return request<{ users: UserProfile[] }>(`/users/discover?${query.toString()}`);
   },
 
-  swipe: (body: { swiperDogId: string; targetDogId: string; intent: Intent; direction: 'like' | 'pass' }) =>
+  swipe: (body: { targetUid: string; direction: 'like' | 'pass' }) =>
     request<SwipeResult>('/swipes', { method: 'POST', body: JSON.stringify(body) }),
 
   getMyMatches: () => request<{ matches: Match[] }>('/matches/mine'),
   getMatch: (id: string) => request<Match>(`/matches/${id}`),
+  getUser: (id: string) => request<UserProfile>(`/users/${id}`),
 };

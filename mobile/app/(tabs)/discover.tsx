@@ -1,41 +1,25 @@
 import { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
-import { useMyDogs } from '../../src/hooks/useMyDogs';
-import { useDiscoverDeck } from '../../src/hooks/useDiscoverDeck';
+import { useMyProfile } from '../../src/hooks/useMyProfile';
+import { useDiscoverPeople } from '../../src/hooks/useDiscoverPeople';
 import { useSwipe } from '../../src/hooks/useSwipe';
 import { requestCurrentLocation } from '../../src/lib/geolocation';
 import { SwipeDeck } from '../../src/components/SwipeDeck';
-import type { Dog, Intent, LatLng } from '../../src/types/models';
-
-const INTENT_LABELS: Record<Intent, string> = {
-  playdate: 'Playdate',
-  breeding: 'Breeding',
-  adoption: 'Adoption',
-};
+import type { LatLng, UserProfile } from '../../src/types/models';
 
 export default function Discover() {
-  const { data: myDogs, isLoading: loadingDogs } = useMyDogs();
+  const { data: myProfile, isLoading: loadingProfile } = useMyProfile();
   const [location, setLocation] = useState<LatLng | null>(null);
-  const [selectedIntent, setSelectedIntent] = useState<Intent | null>(null);
   const swipeMutation = useSwipe();
-
-  const myDog = myDogs?.[0];
 
   useEffect(() => {
     requestCurrentLocation().then(setLocation);
   }, []);
 
-  useEffect(() => {
-    if (myDog && !selectedIntent) {
-      setSelectedIntent(myDog.intents[0]);
-    }
-  }, [myDog, selectedIntent]);
+  const { data: people, isLoading: loadingDeck, refetch } = useDiscoverPeople(myProfile?.dog ? location : null);
 
-  const deckParams = myDog && selectedIntent && location ? { dogId: myDog._id, intent: selectedIntent, location } : null;
-  const { data: dogs, isLoading: loadingDeck, refetch } = useDiscoverDeck(deckParams);
-
-  if (loadingDogs) {
+  if (loadingProfile) {
     return (
       <View style={styles.center}>
         <ActivityIndicator />
@@ -43,10 +27,10 @@ export default function Discover() {
     );
   }
 
-  if (!myDog) {
+  if (!myProfile?.dog) {
     return (
       <View style={styles.center}>
-        <Text style={styles.emptyText}>You haven't created a dog profile yet.</Text>
+        <Text style={styles.emptyText}>You haven't created your profile yet.</Text>
         <Pressable style={styles.button} onPress={() => router.push('/basic-info')}>
           <Text style={styles.buttonText}>Create a profile</Text>
         </Pressable>
@@ -54,33 +38,18 @@ export default function Discover() {
     );
   }
 
-  function handleSwipe(dog: Dog, direction: 'like' | 'pass') {
-    if (!myDog || !selectedIntent) return;
-    swipeMutation.mutate({ swiperDogId: myDog._id, targetDogId: dog._id, intent: selectedIntent, direction });
+  function handleSwipe(person: UserProfile, direction: 'like' | 'pass') {
+    swipeMutation.mutate({ targetUid: person._id, direction });
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.intentRow}>
-        {myDog.intents.map((intent) => (
-          <Pressable
-            key={intent}
-            style={[styles.intentChip, selectedIntent === intent && styles.intentChipSelected]}
-            onPress={() => setSelectedIntent(intent)}
-          >
-            <Text style={selectedIntent === intent ? styles.intentTextSelected : styles.intentText}>
-              {INTENT_LABELS[intent]}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
       {!location || loadingDeck ? (
         <View style={styles.center}>
           <ActivityIndicator />
         </View>
       ) : (
-        <SwipeDeck dogs={dogs || []} onSwipe={handleSwipe} onEmpty={() => refetch()} />
+        <SwipeDeck people={people || []} onSwipe={handleSwipe} onEmpty={() => refetch()} />
       )}
     </View>
   );
@@ -92,9 +61,4 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 16, color: '#666', textAlign: 'center' },
   button: { backgroundColor: '#fe3c72', borderRadius: 8, padding: 14, paddingHorizontal: 24 },
   buttonText: { color: '#fff', fontWeight: '600' },
-  intentRow: { flexDirection: 'row', gap: 8, padding: 16 },
-  intentChip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6 },
-  intentChipSelected: { backgroundColor: '#fe3c72', borderColor: '#fe3c72' },
-  intentText: { color: '#333' },
-  intentTextSelected: { color: '#fff', fontWeight: '600' },
 });

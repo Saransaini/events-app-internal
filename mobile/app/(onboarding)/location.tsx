@@ -17,7 +17,7 @@ export default function LocationStep() {
     try {
       const result = await requestCurrentLocation();
       if (!result) {
-        setError('Location permission is required to find nearby dogs.');
+        setError('Location permission is required to find people nearby.');
         return;
       }
       setLocation(result);
@@ -31,20 +31,22 @@ export default function LocationStep() {
     setSubmitting(true);
     setError(null);
     try {
-      await api.createDog({
-        name: name.trim(),
-        breed: breed.trim(),
-        age: age ? Number(age) : null,
-        sex,
-        bio: bio.trim(),
-        photos,
+      await api.updateMyProfile({
+        dog: {
+          name: name.trim(),
+          breed: breed.trim(),
+          age: age ? Number(age) : null,
+          sex,
+          bio: bio.trim(),
+          photos,
+        },
         intents,
         location,
       });
       reset();
       router.replace('/discover');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create dog profile');
+      setError(err instanceof Error ? err.message : 'Failed to create your profile');
     } finally {
       setSubmitting(false);
     }
@@ -53,7 +55,7 @@ export default function LocationStep() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Where are you?</Text>
-      <Text style={styles.subtitle}>We use this to show you nearby dogs</Text>
+      <Text style={styles.subtitle}>We use this to show you nearby people</Text>
 
       {location ? (
         <Text style={styles.locationText}>

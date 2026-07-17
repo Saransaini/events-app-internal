@@ -11,6 +11,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // @ts-expect-error - getReactNativePersistence exists at runtime (RN build) but is missing from @firebase/auth's shared type declarations
 import { getReactNativePersistence } from '@firebase/auth';
 
+// firebase/firestore's package.json exports map also lacks a "react-native"
+// condition (same root cause as the auth persistence import above), so pull
+// firestore from @firebase/firestore directly to get the RN-specific build
+// with correct networking (long-polling) for React Native. Unlike auth, its
+// public types are unified across platforms, so no suppression is needed.
+import { getFirestore } from '@firebase/firestore';
+
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -27,3 +34,4 @@ export const auth = initializeAuth(app, {
 });
 
 export const storage = getStorage(app);
+export const firestore = getFirestore(app);

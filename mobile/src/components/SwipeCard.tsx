@@ -1,9 +1,10 @@
 import { View, Text, Image, StyleSheet } from 'react-native';
-import type { Dog } from '../types/models';
+import type { UserProfile } from '../types/models';
 import { IntentBadge } from './IntentBadge';
 
-export function SwipeCard({ dog }: { dog: Dog }) {
-  const photo = dog.photos[0];
+export function SwipeCard({ person }: { person: UserProfile }) {
+  const dog = person.dog;
+  const photo = dog?.photos[0];
 
   return (
     <View style={styles.card}>
@@ -15,17 +16,19 @@ export function SwipeCard({ dog }: { dog: Dog }) {
         </View>
       )}
       <View style={styles.info}>
-        <Text style={styles.name}>
-          {dog.name}
-          {dog.age ? `, ${dog.age}` : ''}
-        </Text>
-        {dog.breed ? <Text style={styles.breed}>{dog.breed}</Text> : null}
-        {dog.distanceKm !== undefined && (
-          <Text style={styles.distance}>{dog.distanceKm.toFixed(1)} km away</Text>
+        <Text style={styles.name}>{person.displayName}</Text>
+        {dog && (
+          <Text style={styles.dogLine}>
+            with {dog.name}
+            {dog.breed ? ` (${dog.breed})` : ''}
+          </Text>
         )}
-        {dog.bio ? <Text style={styles.bio}>{dog.bio}</Text> : null}
+        {person.distanceKm !== undefined && (
+          <Text style={styles.distance}>{person.distanceKm.toFixed(1)} km away</Text>
+        )}
+        {dog?.bio ? <Text style={styles.bio}>{dog.bio}</Text> : null}
         <View style={styles.badgeRow}>
-          {dog.intents.map((intent) => (
+          {person.intents.map((intent) => (
             <IntentBadge key={intent} intent={intent} />
           ))}
         </View>
@@ -51,7 +54,7 @@ const styles = StyleSheet.create({
   placeholderText: { fontSize: 64 },
   info: { padding: 16, gap: 4 },
   name: { fontSize: 22, fontWeight: '700' },
-  breed: { fontSize: 16, color: '#666' },
+  dogLine: { fontSize: 16, color: '#666' },
   distance: { fontSize: 14, color: '#999' },
   bio: { fontSize: 14, color: '#333', marginTop: 4 },
   badgeRow: { flexDirection: 'row', gap: 6, marginTop: 8, flexWrap: 'wrap' },

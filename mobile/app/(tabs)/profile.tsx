@@ -1,12 +1,12 @@
 import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../src/lib/firebase';
-import { useMyDogs } from '../../src/hooks/useMyDogs';
+import { useMyProfile } from '../../src/hooks/useMyProfile';
 import { IntentBadge } from '../../src/components/IntentBadge';
 
 export default function Profile() {
-  const { data: dogs, isLoading } = useMyDogs();
-  const myDog = dogs?.[0];
+  const { data: profile, isLoading } = useMyProfile();
+  const dog = profile?.dog;
 
   if (isLoading) {
     return (
@@ -18,20 +18,25 @@ export default function Profile() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {myDog ? (
+      {profile ? (
         <View style={styles.card}>
-          {myDog.photos[0] && <Image source={{ uri: myDog.photos[0] }} style={styles.photo} />}
-          <Text style={styles.name}>{myDog.name}</Text>
-          {myDog.breed ? <Text style={styles.breed}>{myDog.breed}</Text> : null}
+          {dog?.photos[0] && <Image source={{ uri: dog.photos[0] }} style={styles.photo} />}
+          <Text style={styles.name}>{profile.displayName}</Text>
+          {dog && (
+            <Text style={styles.dogLine}>
+              with {dog.name}
+              {dog.breed ? ` (${dog.breed})` : ''}
+            </Text>
+          )}
           <View style={styles.badgeRow}>
-            {myDog.intents.map((intent) => (
+            {profile.intents.map((intent) => (
               <IntentBadge key={intent} intent={intent} />
             ))}
           </View>
-          {myDog.bio ? <Text style={styles.bio}>{myDog.bio}</Text> : null}
+          {dog?.bio ? <Text style={styles.bio}>{dog.bio}</Text> : null}
         </View>
       ) : (
-        <Text style={styles.emptyText}>No dog profile yet.</Text>
+        <Text style={styles.emptyText}>No profile yet.</Text>
       )}
 
       <Pressable style={styles.signOutButton} onPress={() => signOut(auth)}>
@@ -47,7 +52,7 @@ const styles = StyleSheet.create({
   card: { gap: 8 },
   photo: { width: '100%', height: 240, borderRadius: 12 },
   name: { fontSize: 24, fontWeight: '700' },
-  breed: { fontSize: 16, color: '#666' },
+  dogLine: { fontSize: 16, color: '#666' },
   badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   bio: { fontSize: 15, color: '#333' },
   emptyText: { fontSize: 16, color: '#666' },

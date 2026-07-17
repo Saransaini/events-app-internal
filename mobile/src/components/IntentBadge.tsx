@@ -2,9 +2,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import type { Intent } from '../types/models';
 
 const LABELS: Record<Intent, string> = {
+  dating: 'Dating',
   playdate: 'Playdate',
-  breeding: 'Breeding',
-  adoption: 'Adoption',
 };
 
 export function IntentBadge({ intent }: { intent: Intent }) {

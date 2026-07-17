@@ -1,22 +1,22 @@
 import { useRef } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
-import type { Dog } from '../types/models';
+import type { UserProfile } from '../types/models';
 import { SwipeCard } from './SwipeCard';
 
 interface Props {
-  dogs: Dog[];
-  onSwipe: (dog: Dog, direction: 'like' | 'pass') => void;
+  people: UserProfile[];
+  onSwipe: (person: UserProfile, direction: 'like' | 'pass') => void;
   onEmpty: () => void;
 }
 
-export function SwipeDeck({ dogs, onSwipe, onEmpty }: Props) {
-  const swiperRef = useRef<Swiper<Dog>>(null);
+export function SwipeDeck({ people, onSwipe, onEmpty }: Props) {
+  const swiperRef = useRef<Swiper<UserProfile>>(null);
 
-  if (dogs.length === 0) {
+  if (people.length === 0) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyText}>No more dogs nearby right now. Check back later!</Text>
+        <Text style={styles.emptyText}>No one new nearby right now. Check back later!</Text>
       </View>
     );
   }
@@ -25,12 +25,12 @@ export function SwipeDeck({ dogs, onSwipe, onEmpty }: Props) {
     <View style={styles.container}>
       <Swiper
         ref={swiperRef}
-        cards={dogs}
-        renderCard={(dog: Dog) => <SwipeCard dog={dog} />}
-        onSwipedLeft={(index: number) => onSwipe(dogs[index], 'pass')}
-        onSwipedRight={(index: number) => onSwipe(dogs[index], 'like')}
+        cards={people}
+        renderCard={(person: UserProfile) => <SwipeCard person={person} />}
+        onSwipedLeft={(index: number) => onSwipe(people[index], 'pass')}
+        onSwipedRight={(index: number) => onSwipe(people[index], 'like')}
         onSwipedAll={onEmpty}
-        keyExtractor={(dog: Dog) => dog._id}
+        keyExtractor={(person: UserProfile) => person._id}
         backgroundColor="transparent"
         stackSize={3}
         cardVerticalMargin={24}

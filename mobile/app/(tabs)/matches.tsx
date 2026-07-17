@@ -1,7 +1,25 @@
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Image, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useMatches } from '../../src/hooks/useMatches';
-import { IntentBadge } from '../../src/components/IntentBadge';
+import { useUser } from '../../src/hooks/useUser';
+import { auth } from '../../src/lib/firebase';
+import type { Match } from '../../src/types/models';
+
+function MatchRow({ match }: { match: Match }) {
+  const myUid = auth.currentUser?.uid;
+  const otherUid = match.uids.find((uid) => uid !== myUid);
+  const { data: other } = useUser(otherUid);
+
+  return (
+    <Pressable style={styles.row} onPress={() => router.push(`/match/${match._id}`)}>
+      {other?.dog?.photos[0] && <Image source={{ uri: other.dog.photos[0] }} style={styles.thumb} />}
+      <View style={styles.rowText}>
+        <Text style={styles.title}>{other ? other.displayName : 'It’s a match!'}</Text>
+        {other?.dog && <Text style={styles.subtitle}>with {other.dog.name}</Text>}
+      </View>
+    </Pressable>
+  );
+}
 
 export default function Matches() {
   const { data: matches, isLoading } = useMatches();
@@ -27,14 +45,7 @@ export default function Matches() {
       data={matches}
       keyExtractor={(match) => match._id}
       contentContainerStyle={styles.list}
-      renderItem={({ item }) => (
-        <Pressable style={styles.row} onPress={() => router.push(`/match/${item._id}`)}>
-          <Text style={styles.title}>
-            {item.type === 'asymmetric' ? 'New adoption inquiry' : "It's a match!"}
-          </Text>
-          <IntentBadge intent={item.intent} />
-        </Pressable>
-      )}
+      renderItem={({ item }) => <MatchRow match={item} />}
     />
   );
 }
@@ -46,7 +57,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
     padding: 16,
     borderRadius: 12,
     backgroundColor: '#fff',
@@ -54,5 +65,8 @@ const styles = StyleSheet.create({
     borderColor: '#eee',
     marginBottom: 12,
   },
+  thumb: { width: 48, height: 48, borderRadius: 24 },
+  rowText: { flex: 1 },
   title: { fontSize: 16, fontWeight: '600' },
+  subtitle: { fontSize: 13, color: '#666', marginTop: 2 },
 });

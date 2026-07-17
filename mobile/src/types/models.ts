@@ -1,4 +1,4 @@
-export type Intent = 'playdate' | 'breeding' | 'adoption';
+export type Intent = 'dating' | 'playdate';
 export type Sex = 'male' | 'female';
 
 export interface LatLng {
@@ -6,22 +6,20 @@ export interface LatLng {
   lng: number;
 }
 
+export interface Dog {
+  name: string;
+  breed: string;
+  age: number | null;
+  sex: Sex | null;
+  bio: string;
+  photos: string[];
+}
+
 export interface UserProfile {
   _id: string;
   displayName: string;
   email: string;
-  location?: LatLng;
-}
-
-export interface Dog {
-  _id: string;
-  ownerId: string;
-  name: string;
-  bio: string;
-  breed: string;
-  age: number | null;
-  sex: Sex | null;
-  photos: string[];
+  dog?: Dog;
   intents: Intent[];
   active: boolean;
   location?: LatLng;
@@ -35,13 +33,14 @@ export interface SwipeResult {
 
 export interface Match {
   _id: string;
-  dogAId: string;
-  dogBId: string;
-  ownerAId: string;
-  ownerBId: string;
-  ownerIds: string[];
-  intent: Intent;
-  type: 'reciprocal' | 'asymmetric';
+  uids: string[];
   status: 'active' | 'unmatched';
+  createdAt: unknown;
+}
+
+export interface Message {
+  _id: string;
+  senderId: string;
+  text: string;
   createdAt: unknown;
 }
