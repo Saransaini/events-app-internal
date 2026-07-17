@@ -12,7 +12,7 @@ router.get('/mine', async (req, res, next) => {
     try {
         const snapshot = await firestore
             .collection('matches')
-            .where('ownerIds', 'array-contains', req.uid)
+            .where('uids', 'array-contains', req.uid)
             .orderBy('createdAt', 'desc')
             .get();
         res.json({ matches: snapshot.docs.map((doc) => ({ _id: doc.id, ...doc.data() })) });
@@ -27,7 +27,7 @@ router.get('/:id', async (req, res, next) => {
         if (!snapshot.exists) {
             return res.status(404).json({ message: 'Match not found' });
         }
-        if (!snapshot.data().ownerIds.includes(req.uid)) {
+        if (!snapshot.data().uids.includes(req.uid)) {
             return res.status(403).json({ message: 'Not a participant in this match' });
         }
         res.json({ _id: snapshot.id, ...snapshot.data() });

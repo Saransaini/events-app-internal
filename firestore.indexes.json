@@ -1,27 +1,10 @@
 {
   "indexes": [
     {
-      "collectionGroup": "dogs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "intents", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "active", "order": "ASCENDING" },
-        { "fieldPath": "geohash", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "matches",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "ownerIds", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "swipes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "swiperDogId", "order": "ASCENDING" },
+        { "fieldPath": "uids", "arrayConfig": "CONTAINS" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }

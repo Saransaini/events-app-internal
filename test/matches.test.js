@@ -6,39 +6,37 @@ const app = require('../server');
 const { clearFirestore } = require('./setup/firestoreEmulator');
 
 const expect = chai.expect;
-const OWNER_A = 'test-owner-match-a';
-const OWNER_B = 'test-owner-match-b';
+const UID_A = 'test-match-a';
+const UID_B = 'test-match-b';
 
-function createDog(owner, body) {
-    return request(app).post('/dogs').set('x-test-uid', owner).send(body);
+function createProfile(uid, body) {
+    return request(app).post('/users/me').set('x-test-uid', uid).send(body);
 }
 
-function swipe(owner, body) {
-    return request(app).post('/swipes').set('x-test-uid', owner).send(body);
+function swipe(uid, body) {
+    return request(app).post('/swipes').set('x-test-uid', uid).send(body);
 }
 
 describe('Matches API', function () {
     afterEach(clearFirestore);
 
     it('lists matches for a participant and forbids non-participants', function (done) {
-        createDog(OWNER_A, { name: 'DogA', intents: ['breeding'] })
-            .expect(201)
-            .end((err, resA) => {
+        createProfile(UID_A, { displayName: 'A', dog: { name: 'DogA' }, intents: ['dating'] })
+            .expect(200)
+            .end((err) => {
                 if (err) return done(err);
-                const dogAId = resA.body._id;
 
-                createDog(OWNER_B, { name: 'DogB', intents: ['breeding'] })
-                    .expect(201)
-                    .end((err2, resB) => {
+                createProfile(UID_B, { displayName: 'B', dog: { name: 'DogB' }, intents: ['dating'] })
+                    .expect(200)
+                    .end((err2) => {
                         if (err2) return done(err2);
-                        const dogBId = resB.body._id;
 
-                        swipe(OWNER_A, { swiperDogId: dogAId, targetDogId: dogBId, intent: 'breeding', direction: 'like' })
+                        swipe(UID_A, { targetUid: UID_B, direction: 'like' })
                             .expect(200)
                             .end((err3) => {
                                 if (err3) return done(err3);
 
-                                swipe(OWNER_B, { swiperDogId: dogBId, targetDogId: dogAId, intent: 'breeding', direction: 'like' })
+                                swipe(UID_B, { targetUid: UID_A, direction: 'like' })
                                     .expect(200)
                                     .end((err4, res4) => {
                                         if (err4) return done(err4);
@@ -46,7 +44,7 @@ describe('Matches API', function () {
 
                                         request(app)
                                             .get('/matches/mine')
-                                            .set('x-test-uid', OWNER_A)
+                                            .set('x-test-uid', UID_A)
                                             .expect(200)
                                             .end((err5, res5) => {
                                                 if (err5) return done(err5);

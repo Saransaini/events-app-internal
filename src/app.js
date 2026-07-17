@@ -10,7 +10,6 @@ const bodyParser = require('body-parser');
 
 const eventsRouter = require('./routes/events');
 const usersRouter = require('./routes/users');
-const dogsRouter = require('./routes/dogs');
 const swipesRouter = require('./routes/swipes');
 const matchesRouter = require('./routes/matches');
 const errorHandler = require('./middleware/errorHandler');
@@ -30,7 +29,6 @@ app.use(function (req, res, next) {
 
 app.use(eventsRouter);
 app.use('/users', usersRouter);
-app.use('/dogs', dogsRouter);
 app.use('/swipes', swipesRouter);
 app.use('/matches', matchesRouter);
 

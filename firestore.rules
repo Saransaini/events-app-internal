@@ -1,10 +1,27 @@
 rules_version = '2';
 
-// All access goes through the backend using the Firebase Admin SDK, which
-// bypasses these rules. This minimal ruleset just keeps direct client SDK
-// access locked down for the Firestore emulator/console.
+// Profiles, swipes, discovery, and match creation all go through the
+// Express backend using the Firebase Admin SDK, which bypasses these rules
+// entirely. The one exception is chat: the mobile client reads match docs
+// and reads/writes messages directly via the Firebase client SDK, since
+// Firestore's realtime listeners are the natural fit for that and these
+// rules scope access to the two matched participants only.
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /matches/{matchId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.uids;
+      allow write: if false;
+
+      match /messages/{messageId} {
+        allow read: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.uids;
+        allow create: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.uids
+          && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
