@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
@@ -29,9 +30,15 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
+// getReactNativePersistence only exists in @firebase/auth's "react-native"
+// build — on web, Metro resolves the browser build instead, where it's
+// undefined, so this app must only ever be used on native. On web, plain
+// initializeApp lets the SDK fall back to its own browser-appropriate
+// default persistence.
+export const auth =
+  Platform.OS === 'web'
+    ? initializeAuth(app)
+    : initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
 
 export const storage = getStorage(app);
 export const firestore = getFirestore(app);
