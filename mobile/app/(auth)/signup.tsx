@@ -4,6 +4,8 @@ import { Link, router } from 'expo-router';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../src/lib/firebase';
 import { api } from '../../src/lib/api';
+import { GoogleSignInButton } from '../../src/components/GoogleSignInButton';
+import { isGoogleSignInConfigured } from '../../src/hooks/useGoogleSignIn';
 
 export default function Signup() {
   const [displayName, setDisplayName] = useState('');
@@ -49,6 +51,12 @@ export default function Signup() {
       <Pressable style={styles.button} onPress={handleSignup} disabled={submitting}>
         <Text style={styles.buttonText}>{submitting ? 'Creating account…' : 'Sign Up'}</Text>
       </Pressable>
+      {isGoogleSignInConfigured && (
+        <>
+          <Text style={styles.divider}>or</Text>
+          <GoogleSignInButton />
+        </>
+      )}
       <Link href="/login" style={styles.link}>
         Already have an account? Log in
       </Link>
@@ -64,4 +72,5 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   error: { color: '#c0392b' },
   link: { textAlign: 'center', marginTop: 16, color: '#fe3c72' },
+  divider: { textAlign: 'center', color: '#999', marginVertical: 4 },
 });

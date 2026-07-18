@@ -91,6 +91,9 @@ Expo (managed workflow) + TypeScript, using Expo Router for navigation.
 - `src/lib/firebase.ts` — Firebase client SDK init (Auth + Storage +
   Firestore)
 - `src/lib/chat.ts` — direct Firestore reads/writes for chat messages
+- `src/hooks/useGoogleSignIn.ts` — Google sign-in via `expo-auth-session`
+  (works in Expo Go, no custom native build needed), exchanges the Google ID
+  token for a Firebase credential via `signInWithCredential`
 
 ### Setup
 
@@ -100,6 +103,36 @@ npm install
 cp .env.example .env   # fill in your Firebase web app config + API base URL
 npx expo start
 ```
+
+### Google sign-in setup (optional)
+
+Email/password works with no extra setup. To also show the "Continue with
+Google" button, you need OAuth client IDs from
+[Google Cloud Console](https://console.cloud.google.com/apis/credentials):
+
+1. Create (or pick) a project, then **Create Credentials → OAuth client ID**.
+2. You need one client ID **per platform you'll test**, all under the same
+   project — Google requires separate client IDs because each platform has a
+   different redirect pattern:
+   - **Web application** — for `npx expo start --web`. Add
+     `https://auth.expo.io/@your-expo-username/tinder-for-dogs` and your local
+     dev URL (e.g. `http://localhost:8090`) as authorized redirect URIs.
+   - **iOS** — bundle ID must match `mobile/app.json`'s `ios.bundleIdentifier`
+     (`com.tinderfordogs.app`, or whatever you change it to).
+   - **Android** — package name must match `mobile/app.json`'s
+     `android.package`, plus your app's SHA-1 signing certificate fingerprint
+     (`eas credentials` can show this for an EAS-built app).
+3. In **Firebase Console → Authentication → Sign-in method**, enable the
+   **Google** provider.
+4. Put the client ID(s) you created in `mobile/.env`:
+   ```
+   EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=...
+   EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=...
+   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...
+   ```
+   Leave any you're not testing blank — the button only appears once at
+   least one is set, and only the client ID matching the current platform is
+   actually used at runtime.
 
 Scan the QR code with the **Expo Go** app on a real iOS/Android device, or run
 `npx expo start --ios` / `--android` if you have Xcode/Android Studio locally.
@@ -132,3 +165,6 @@ npx expo-doctor     # config/dependency sanity
   the user count per region grows large.
 - Unmatching exists (permanently deletes the match + all messages, see
   above) but there's no block or report flow yet.
+- Only Google sign-in is supported alongside email/password — no Apple or
+  Facebook login yet (Apple's App Store rules require an alternative to
+  social login if you ever remove email/password, which this app doesn't).

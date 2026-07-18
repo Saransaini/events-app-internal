@@ -3,6 +3,8 @@ import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../src/lib/firebase';
+import { GoogleSignInButton } from '../../src/components/GoogleSignInButton';
+import { isGoogleSignInConfigured } from '../../src/hooks/useGoogleSignIn';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -44,6 +46,12 @@ export default function Login() {
       <Pressable style={styles.button} onPress={handleLogin} disabled={submitting}>
         <Text style={styles.buttonText}>{submitting ? 'Signing in…' : 'Log In'}</Text>
       </Pressable>
+      {isGoogleSignInConfigured && (
+        <>
+          <Text style={styles.divider}>or</Text>
+          <GoogleSignInButton />
+        </>
+      )}
       <Link href="/signup" style={styles.link}>
         Don't have an account? Sign up
       </Link>
@@ -59,4 +67,5 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   error: { color: '#c0392b' },
   link: { textAlign: 'center', marginTop: 16, color: '#fe3c72' },
+  divider: { textAlign: 'center', color: '#999', marginVertical: 4 },
 });
