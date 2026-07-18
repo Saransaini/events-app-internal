@@ -34,7 +34,6 @@ export interface SwipeResult {
 export interface Match {
   _id: string;
   uids: string[];
-  status: 'active' | 'unmatched';
   createdAt: unknown;
 }
 

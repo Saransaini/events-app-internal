@@ -17,7 +17,6 @@ async function evaluate({ swiperUid, targetUid }) {
     const matchId = `${sortedUids[0]}_${sortedUids[1]}`;
     const matchDoc = {
         uids: [swiperUid, targetUid],
-        status: 'active',
         createdAt: new Date(),
     };
 

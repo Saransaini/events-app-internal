@@ -16,7 +16,8 @@ Express + Firestore, structured under `src/`:
   their dog), the nearby-people discovery feed, and a public profile lookup
   (`GET /users/:id`) used to show who a match is with.
 - `src/routes/swipes.js` — records a like/pass and checks for a match.
-- `src/routes/matches.js` — list/get matches for the signed-in user.
+- `src/routes/matches.js` — list/get matches for the signed-in user, and
+  `DELETE /matches/:id` to unmatch.
 - `src/services/matchService.js` — a match is created once both people have
   liked each other (always reciprocal — no asymmetric/listing case, unlike an
   earlier version of this app that matched dogs directly).
@@ -28,6 +29,15 @@ Chat deliberately bypasses this API: the mobile client reads/writes
 realtime delivery, scoped by `firestore.rules` to the two matched
 participants (everything else stays behind the Express API, which uses the
 Admin SDK and bypasses rules entirely).
+
+**No chat history is retained anywhere.** Messages live in Firestore only
+for as long as a match is active. The moment either person unmatches
+(`DELETE /matches/:id`), the backend purges every message in that match's
+`messages` subcollection and deletes the match itself — there's no
+soft-deleted/"unmatched" status kept around, and no separate log kept
+server-side for moderation. That's a deliberate privacy tradeoff: it means a
+reported conversation can't be reviewed after the fact, since nothing of it
+still exists.
 
 ### Setup
 
@@ -113,4 +123,5 @@ npx expo-doctor     # config/dependency sanity
   than a Firestore-side query, since Firestore can't do an efficient
   server-side "not in" exclusion at scale — fine for v1, worth revisiting if
   the user count per region grows large.
-- No "unmatch" or block/report flow yet.
+- Unmatching exists (permanently deletes the match + all messages, see
+  above) but there's no block or report flow yet.

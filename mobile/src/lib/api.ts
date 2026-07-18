@@ -52,5 +52,6 @@ export const api = {
 
   getMyMatches: () => request<{ matches: Match[] }>('/matches/mine'),
   getMatch: (id: string) => request<Match>(`/matches/${id}`),
+  unmatch: (id: string) => request<void>(`/matches/${id}`, { method: 'DELETE' }),
   getUser: (id: string) => request<UserProfile>(`/users/${id}`),
 };

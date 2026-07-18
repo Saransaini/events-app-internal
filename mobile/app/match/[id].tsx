@@ -9,8 +9,10 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../../src/lib/api';
 import { useChat } from '../../src/hooks/useChat';
 import { useUser } from '../../src/hooks/useUser';
@@ -22,6 +24,8 @@ export default function MatchChat() {
   const [match, setMatch] = useState<Match | null>(null);
   const [loadingMatch, setLoadingMatch] = useState(true);
   const [draft, setDraft] = useState('');
+  const [unmatching, setUnmatching] = useState(false);
+  const queryClient = useQueryClient();
 
   const myUid = auth.currentUser?.uid;
   const otherUid = match?.uids.find((uid) => uid !== myUid);
@@ -40,6 +44,31 @@ export default function MatchChat() {
     const text = draft;
     setDraft('');
     await send(text);
+  }
+
+  function confirmUnmatch() {
+    Alert.alert(
+      'Unmatch?',
+      `This permanently deletes your conversation with ${other?.displayName || 'this person'}. This can't be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Unmatch', style: 'destructive', onPress: handleUnmatch },
+      ]
+    );
+  }
+
+  async function handleUnmatch() {
+    if (!id) return;
+    setUnmatching(true);
+    try {
+      await api.unmatch(id);
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+      router.replace('/matches');
+    } catch (err) {
+      Alert.alert('Failed to unmatch', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setUnmatching(false);
+    }
   }
 
   if (loadingMatch) {
@@ -64,7 +93,16 @@ export default function MatchChat() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
-      <Stack.Screen options={{ title: other?.displayName || 'Match' }} />
+      <Stack.Screen
+        options={{
+          title: other?.displayName || 'Match',
+          headerRight: () => (
+            <Pressable onPress={confirmUnmatch} disabled={unmatching} hitSlop={8}>
+              <Text style={styles.unmatchLink}>Unmatch</Text>
+            </Pressable>
+          ),
+        }}
+      />
       <FlatList
         data={messages}
         keyExtractor={(message) => message._id}
@@ -121,4 +159,5 @@ const styles = StyleSheet.create({
   input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10 },
   sendButton: { backgroundColor: '#fe3c72', borderRadius: 20, paddingHorizontal: 18, paddingVertical: 10 },
   sendButtonText: { color: '#fff', fontWeight: '600' },
+  unmatchLink: { color: '#c0392b', fontWeight: '600', marginRight: 4 },
 });
