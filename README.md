@@ -104,6 +104,13 @@ npx expo start
 Scan the QR code with the **Expo Go** app on a real iOS/Android device, or run
 `npx expo start --ios` / `--android` if you have Xcode/Android Studio locally.
 
+**Fastest way to just look at the screens, no phone needed:** run
+`npx expo start --web` instead and open the printed `localhost` URL in a
+browser. This renders the actual app UI (login, signup, onboarding, etc.),
+though a few native-only bits (camera/photo picker, native swipe gestures,
+GPS permission prompts) won't behave identically to a real device — treat it
+as a UI preview, not the real experience.
+
 ### Verification
 
 ```bash
