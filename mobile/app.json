@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "Tinder for Dogs",
-    "slug": "tinder-for-dogs",
-    "scheme": "tinderfordogs",
+    "name": "Wagmate",
+    "slug": "wagmate",
+    "scheme": "wagmate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.tinderfordogs.app",
+      "bundleIdentifier": "com.wagmate.app",
       "supportsTablet": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "We use your location to show you nearby dogs.",
@@ -18,7 +18,7 @@
       }
     },
     "android": {
-      "package": "com.tinderfordogs.app",
+      "package": "com.wagmate.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

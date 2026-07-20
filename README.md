@@ -1,8 +1,8 @@
-# Tinder for Dogs
+# Wagmate
 
 A dating app for dog owners — people match with people, with each person's
 dog as the centerpiece of their profile. The idea: two dog owners ("dog mom",
-dog dad") match, go on a date, and if the romantic spark isn't there, their
+"dog dad") match, go on a date, and if the romantic spark isn't there, their
 dogs can still have a playdate. Built as an Express/Firestore backend (`/`)
 plus an Expo/React Native mobile client (`/mobile`).
 
@@ -121,7 +121,7 @@ Google" button, you need OAuth client IDs from
      "Authorized redirect URIs." If the port differs later, edit the OAuth
      client and add the new one — you can list more than one.
    - **iOS** — bundle ID must match `mobile/app.json`'s `ios.bundleIdentifier`
-     (`com.tinderfordogs.app`, or whatever you change it to).
+     (`com.wagmate.app`, or whatever you change it to).
    - **Android** — package name must match `mobile/app.json`'s
      `android.package`, plus your app's SHA-1 signing certificate fingerprint
      (`eas credentials` can show this for an EAS-built app).
