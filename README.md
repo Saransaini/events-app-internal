@@ -114,9 +114,12 @@ Google" button, you need OAuth client IDs from
 2. You need one client ID **per platform you'll test**, all under the same
    project — Google requires separate client IDs because each platform has a
    different redirect pattern:
-   - **Web application** — for `npx expo start --web`. Add
-     `https://auth.expo.io/@your-expo-username/tinder-for-dogs` and your local
-     dev URL (e.g. `http://localhost:8090`) as authorized redirect URIs.
+   - **Web application** — for `npx expo start --web`. The redirect URI is
+     just the dev server's own URL with no path (e.g. `http://localhost:8081`
+     — check your terminal for the actual port `expo start --web` picks). Add
+     that same URL under **both** "Authorized JavaScript origins" and
+     "Authorized redirect URIs." If the port differs later, edit the OAuth
+     client and add the new one — you can list more than one.
    - **iOS** — bundle ID must match `mobile/app.json`'s `ios.bundleIdentifier`
      (`com.tinderfordogs.app`, or whatever you change it to).
    - **Android** — package name must match `mobile/app.json`'s
