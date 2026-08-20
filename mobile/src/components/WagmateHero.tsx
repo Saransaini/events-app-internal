@@ -28,20 +28,20 @@ const SEAT_Y = WORDMARK_BASELINE - WORDMARK_SIZE * 0.72;
 const GIRL_X = 108;
 const BOY_X = 252;
 
-// The join sits high — level with the dogs' shoulders, in the clear gap
-// between their heads — and the clasped hands ARE drawn. Depth comes from
-// painting the dogs after the arms: each arm is interrupted where a dog
-// crosses it, so the hands read as being behind the pair rather than in
-// front of them.
+// The join sits low, at seated lap height alongside the dogs' haunches,
+// which is where two people sitting down would actually hold hands. The dogs
+// are painted after the arms, so each arm is interrupted where a dog crosses
+// it and the hands read as being behind the pair.
 //
-// Height is doing the important work. An earlier version ran the arms down
-// to the dogs' mid-body and hid the join entirely, which put two arms at the
-// dogs' hindquarters and invited an unfortunate reading. Keep the clasp at
-// back height, and keep the dogs far enough apart that it is plainly visible
-// between them.
-const DOG_LEFT_X = 164;
-const DOG_RIGHT_X = 198;
-const HANDS = { x: 181, y: SEAT_Y - 30 };
+// The one thing that must not change: the clasp stays VISIBLE in the gap
+// between the dogs. A previous attempt hid it behind them, which left two
+// arms simply disappearing into the dogs' hindquarters and invited a reading
+// nobody wants on a sign-in screen. Drawn hands in clear space between the
+// two animals are what keep it legible — so the dogs' spacing and this
+// point's x are a pair, and moving either needs the other checked.
+const DOG_LEFT_X = 159;
+const DOG_RIGHT_X = 203;
+const HANDS = { x: 181, y: SEAT_Y - 12 };
 
 const COLORS = {
   ink: '#1f1f1f',
@@ -130,9 +130,9 @@ export function WagmateHero({
           d={`M ${GIRL_X - 24} ${SEAT_Y} L ${GIRL_X - 21} 142 q ${21} -12 ${42} 0 L ${GIRL_X + 24} ${SEAT_Y} Z`}
           fill={COLORS.girlTop}
         />
-        {/* inner arm, reaching across behind the dogs at shoulder height */}
+        {/* inner arm, dropping to lap height and reaching behind the dogs */}
         <Path
-          d={`M ${GIRL_X + 19} 145 Q ${GIRL_X + 42} 146 ${HANDS.x - 4} ${HANDS.y}`}
+          d={`M ${GIRL_X + 20} 148 Q ${GIRL_X + 44} 158 ${HANDS.x - 4} ${HANDS.y}`}
           stroke={COLORS.girlTop}
           strokeWidth={9.5}
           strokeLinecap="round"
@@ -166,7 +166,7 @@ export function WagmateHero({
           fill={COLORS.boyTop}
         />
         <Path
-          d={`M ${BOY_X - 21} 143 Q ${BOY_X - 44} 144 ${HANDS.x + 4} ${HANDS.y}`}
+          d={`M ${BOY_X - 22} 146 Q ${BOY_X - 46} 156 ${HANDS.x + 4} ${HANDS.y}`}
           stroke={COLORS.boyTop}
           strokeWidth={9.5}
           strokeLinecap="round"
@@ -192,8 +192,8 @@ export function WagmateHero({
       <Dog x={DOG_RIGHT_X} coat={COLORS.dogBrown} ear={COLORS.dogEarBrown} />
 
       {/* A small heart above the inner side of each dog */}
-      <Heart x={172} y={130} scale={0.28} />
-      <Heart x={190} y={125} scale={0.28} />
+      <Heart x={170} y={130} scale={0.28} />
+      <Heart x={192} y={125} scale={0.28} />
 
       {/* ---- The wordmark they're all sitting on ---- */}
       <SvgText
