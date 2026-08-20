@@ -28,24 +28,24 @@ const SEAT_Y = WORDMARK_BASELINE - WORDMARK_SIZE * 0.72;
 const GIRL_X = 108;
 const BOY_X = 252;
 
-// The dogs' bodies are sized and spaced to just overlap at the midline, and
-// they are painted AFTER the arms. That overlap is what hides the join: the
-// arms run down behind the dogs and meet out of sight, rather than the hands
-// showing through a gap between them. There is deliberately no drawn clasp —
-// the converging arms imply it, and any visible hand would sit in front of
-// the dogs, which is precisely what this arrangement avoids.
+// The join sits high — level with the dogs' shoulders, in the clear gap
+// between their heads — and the clasped hands ARE drawn. Depth comes from
+// painting the dogs after the arms: each arm is interrupted where a dog
+// crosses it, so the hands read as being behind the pair rather than in
+// front of them.
 //
-// The heads stay far enough apart to read as two animals, and the strong
-// coat contrast does the rest of that work.
-const DOG_LEFT_X = 169;
-const DOG_RIGHT_X = 193;
-const HAND_LEFT = { x: 175, y: SEAT_Y - 8 };
-const HAND_RIGHT = { x: 187, y: SEAT_Y - 8 };
+// Height is doing the important work. An earlier version ran the arms down
+// to the dogs' mid-body and hid the join entirely, which put two arms at the
+// dogs' hindquarters and invited an unfortunate reading. Keep the clasp at
+// back height, and keep the dogs far enough apart that it is plainly visible
+// between them.
+const DOG_LEFT_X = 164;
+const DOG_RIGHT_X = 198;
+const HANDS = { x: 181, y: SEAT_Y - 30 };
 
 const COLORS = {
   ink: '#1f1f1f',
-  // Only the necks show skin — the forearms run behind the dogs and are never
-  // drawn, since any visible hand would sit in front of them.
+  skin: '#eabc94',
   skinShade: '#dda87e',
   girlHair: '#5c3a2e',
   girlTop: '#fe3c72',
@@ -130,11 +130,18 @@ export function WagmateHero({
           d={`M ${GIRL_X - 24} ${SEAT_Y} L ${GIRL_X - 21} 142 q ${21} -12 ${42} 0 L ${GIRL_X + 24} ${SEAT_Y} Z`}
           fill={COLORS.girlTop}
         />
-        {/* inner arm, dropping down behind the dogs */}
+        {/* inner arm, reaching across behind the dogs at shoulder height */}
         <Path
-          d={`M ${GIRL_X + 19} 146 Q ${GIRL_X + 40} 162 ${HAND_LEFT.x} ${HAND_LEFT.y}`}
+          d={`M ${GIRL_X + 19} 145 Q ${GIRL_X + 42} 146 ${HANDS.x - 4} ${HANDS.y}`}
           stroke={COLORS.girlTop}
           strokeWidth={9.5}
+          strokeLinecap="round"
+          fill="none"
+        />
+        <Path
+          d={`M ${HANDS.x - 20} ${HANDS.y - 1} Q ${HANDS.x - 12} ${HANDS.y} ${HANDS.x - 3} ${HANDS.y}`}
+          stroke={COLORS.skin}
+          strokeWidth={8}
           strokeLinecap="round"
           fill="none"
         />
@@ -159,9 +166,16 @@ export function WagmateHero({
           fill={COLORS.boyTop}
         />
         <Path
-          d={`M ${BOY_X - 21} 144 Q ${BOY_X - 40} 160 ${HAND_RIGHT.x} ${HAND_RIGHT.y}`}
+          d={`M ${BOY_X - 21} 143 Q ${BOY_X - 44} 144 ${HANDS.x + 4} ${HANDS.y}`}
           stroke={COLORS.boyTop}
           strokeWidth={9.5}
+          strokeLinecap="round"
+          fill="none"
+        />
+        <Path
+          d={`M ${HANDS.x + 20} ${HANDS.y - 1} Q ${HANDS.x + 12} ${HANDS.y} ${HANDS.x + 3} ${HANDS.y}`}
+          stroke={COLORS.skin}
+          strokeWidth={8}
           strokeLinecap="round"
           fill="none"
         />
@@ -169,13 +183,17 @@ export function WagmateHero({
         <Path d={`M ${BOY_X - 19} 114 q 19 10 38 0 l 0 -8 q -19 -8 -38 0 Z`} fill={COLORS.boyHair} />
       </G>
 
-      {/* ---- The dogs, painted over the arms so the join stays hidden ---- */}
+      {/* Their clasped hands, drawn before the dogs so the dogs overlap the
+          arms on either side and the join reads as being behind the pair. */}
+      <Circle cx={HANDS.x} cy={HANDS.y} r={6} fill={COLORS.skin} />
+
+      {/* ---- The dogs, painted over the arms to sit in front of them ---- */}
       <Dog x={DOG_LEFT_X} coat={COLORS.dogGold} ear={COLORS.dogEarGold} />
       <Dog x={DOG_RIGHT_X} coat={COLORS.dogBrown} ear={COLORS.dogEarBrown} />
 
-      {/* A small heart on the inner side of each dog */}
-      <Heart x={175} y={137} scale={0.28} />
-      <Heart x={189} y={130} scale={0.28} />
+      {/* A small heart above the inner side of each dog */}
+      <Heart x={172} y={130} scale={0.28} />
+      <Heart x={190} y={125} scale={0.28} />
 
       {/* ---- The wordmark they're all sitting on ---- */}
       <SvgText
