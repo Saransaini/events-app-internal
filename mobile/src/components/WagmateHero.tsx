@@ -35,12 +35,14 @@ const SEAT_Y = WORDMARK_BASELINE - WORDMARK_SIZE * 0.72;
 
 const GIRL_X = 108;
 const BOY_X = 252;
-// Hands meet above the dogs' heads — the only placement where the clasp
-// stays visible with two dogs sitting between them.
-const HANDS = { x: 180, y: 128 };
+// The clasp sits low, at the dogs' shoulder height, and the dogs are painted
+// after it — so their arms run BEHIND the dogs and only the joined hands
+// show in the gap between them. (An earlier version arced the arms over the
+// dogs' heads, which read as a rainbow rather than a couple holding hands.)
+const HANDS = { x: 181, y: SEAT_Y - 15 };
 
-const DOG_LEFT_X = 160;
-const DOG_RIGHT_X = 202;
+const DOG_LEFT_X = 163;
+const DOG_RIGHT_X = 199;
 
 const COLORS = {
   ink: '#1f1f1f',
@@ -122,7 +124,14 @@ function Dog({
   );
 }
 
-export function WagmateHero({ width = 320 }: { width?: number }) {
+export function WagmateHero({
+  width = 320,
+  fontFamily,
+}: {
+  width?: number;
+  /** Wordmark typeface. Omitted falls back to the platform's bold system font. */
+  fontFamily?: string;
+}) {
   const height = (width * 250) / 360;
 
   return (
@@ -138,16 +147,16 @@ export function WagmateHero({ width = 320 }: { width?: number }) {
         y={WORDMARK_BASELINE}
         fontSize={WORDMARK_SIZE}
         fontWeight="800"
+        fontFamily={fontFamily}
         textAnchor="middle"
         fill={COLORS.ink}
       >
         Wagmate
       </SvgText>
 
-      {/* A heart above each of them, and a small one over the dogs */}
-      <Heart x={GIRL_X} y={62} scale={1.15} />
-      <Heart x={BOY_X} y={58} scale={1.15} />
-      <Heart x={180} y={96} scale={0.5} />
+      {/* A small heart off each of their outer shoulders */}
+      <Heart x={62} y={108} scale={0.62} />
+      <Heart x={298} y={102} scale={0.62} />
 
       {/* ---- Girl, on the left ---- */}
       <G>
@@ -164,16 +173,16 @@ export function WagmateHero({ width = 320 }: { width?: number }) {
           d={`M ${GIRL_X - 24} ${SEAT_Y} L ${GIRL_X - 21} 142 q ${21} -12 ${42} 0 L ${GIRL_X + 24} ${SEAT_Y} Z`}
           fill={COLORS.girlTop}
         />
-        {/* inner arm, reaching up and across to his */}
+        {/* inner arm, dropping down and across to meet his behind the dogs */}
         <Path
-          d={`M ${GIRL_X + 19} 144 Q ${GIRL_X + 40} 132 ${HANDS.x - 7} ${HANDS.y + 1}`}
+          d={`M ${GIRL_X + 19} 146 Q ${GIRL_X + 38} 160 ${HANDS.x - 8} ${HANDS.y}`}
           stroke={COLORS.girlTop}
           strokeWidth={9.5}
           strokeLinecap="round"
           fill="none"
         />
         <Path
-          d={`M ${HANDS.x - 22} ${HANDS.y + 5} Q ${HANDS.x - 14} ${HANDS.y + 1} ${HANDS.x - 5} ${HANDS.y}`}
+          d={`M ${HANDS.x - 24} ${HANDS.y - 1} Q ${HANDS.x - 15} ${HANDS.y} ${HANDS.x - 5} ${HANDS.y}`}
           stroke={COLORS.skin}
           strokeWidth={8.5}
           strokeLinecap="round"
@@ -201,14 +210,14 @@ export function WagmateHero({ width = 320 }: { width?: number }) {
           fill={COLORS.boyTop}
         />
         <Path
-          d={`M ${BOY_X - 21} 142 Q ${BOY_X - 42} 130 ${HANDS.x + 7} ${HANDS.y + 1}`}
+          d={`M ${BOY_X - 21} 144 Q ${BOY_X - 40} 158 ${HANDS.x + 8} ${HANDS.y}`}
           stroke={COLORS.boyTop}
           strokeWidth={9.5}
           strokeLinecap="round"
           fill="none"
         />
         <Path
-          d={`M ${HANDS.x + 22} ${HANDS.y + 5} Q ${HANDS.x + 14} ${HANDS.y + 1} ${HANDS.x + 5} ${HANDS.y}`}
+          d={`M ${HANDS.x + 24} ${HANDS.y - 1} Q ${HANDS.x + 15} ${HANDS.y} ${HANDS.x + 5} ${HANDS.y}`}
           stroke={COLORS.skin}
           strokeWidth={8.5}
           strokeLinecap="round"
