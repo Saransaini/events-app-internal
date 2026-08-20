@@ -5,6 +5,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../src/lib/firebase';
 import { api } from '../../src/lib/api';
 import { GoogleSignInButton } from '../../src/components/GoogleSignInButton';
+import { WagmateHero } from '../../src/components/WagmateHero';
 import { isGoogleSignInConfigured } from '../../src/hooks/useGoogleSignIn';
 
 export default function Signup() {
@@ -30,6 +31,9 @@ export default function Signup() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.hero}>
+        <WagmateHero width={260} />
+      </View>
       <Text style={styles.title}>Create your account</Text>
       <TextInput style={styles.input} placeholder="Your name" value={displayName} onChangeText={setDisplayName} />
       <TextInput
@@ -66,7 +70,8 @@ export default function Signup() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 24 },
+  hero: { alignItems: 'center' },
+  title: { fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, fontSize: 16 },
   button: { backgroundColor: '#fe3c72', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },

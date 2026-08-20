@@ -100,7 +100,7 @@ function Dog({ x, coat, ear }: { x: number; coat: string; ear: string }) {
 
 export function WagmateHero({
   width = 320,
-  fontFamily = 'Baloo2_800ExtraBold',
+  fontFamily = 'Rubik_700Bold',
 }: {
   width?: number;
   /** Wordmark typeface; falls back to the platform's bold system font. */
@@ -202,7 +202,10 @@ export function WagmateHero({
         x={180}
         y={WORDMARK_BASELINE}
         fontSize={WORDMARK_SIZE}
-        fontWeight="800"
+        // No fontWeight: the loaded face is already the bold cut, and it is
+        // registered at normal weight. Asking for a heavier weight on top of
+        // it makes the renderer synthesise a fake bold over a real one, which
+        // thickens and rounds the letterforms.
         fontFamily={fontFamily}
         textAnchor="middle"
         fill={COLORS.ink}
