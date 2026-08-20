@@ -4,6 +4,7 @@ import { Link } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../src/lib/firebase';
 import { GoogleSignInButton } from '../../src/components/GoogleSignInButton';
+import { WagmateHero } from '../../src/components/WagmateHero';
 import { isGoogleSignInConfigured } from '../../src/hooks/useGoogleSignIn';
 
 export default function Login() {
@@ -26,7 +27,9 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Wagmate</Text>
+      <View style={styles.hero}>
+        <WagmateHero />
+      </View>
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -61,7 +64,7 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 28, fontWeight: '700', textAlign: 'center', marginBottom: 24 },
+  hero: { alignItems: 'center', marginBottom: 12 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, fontSize: 16 },
   button: { backgroundColor: '#fe3c72', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
