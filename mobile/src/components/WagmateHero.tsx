@@ -100,7 +100,7 @@ function Dog({ x, coat, ear }: { x: number; coat: string; ear: string }) {
 
 export function WagmateHero({
   width = 320,
-  fontFamily = 'Rubik_700Bold',
+  fontFamily = 'Baloo2_800ExtraBold',
 }: {
   width?: number;
   /** Wordmark typeface; falls back to the platform's bold system font. */

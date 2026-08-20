@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ActivityIndicator, View } from 'react-native';
 import { useFonts } from 'expo-font';
-import { Rubik_700Bold } from '@expo-google-fonts/rubik';
+import { Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
 import { useAuth } from '../src/hooks/useAuth';
 
 const queryClient = new QueryClient();
@@ -45,7 +45,7 @@ export default function RootLayout() {
   // The wordmark is drawn as SVG text, which has no fallback rendering while
   // a webfont is still loading — it would paint in the default serif and then
   // snap. Holding the first frame until the face is ready avoids that flash.
-  const [fontsLoaded] = useFonts({ Rubik_700Bold });
+  const [fontsLoaded] = useFonts({ Baloo2_800ExtraBold });
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
