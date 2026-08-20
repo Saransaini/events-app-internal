@@ -130,18 +130,21 @@ export function WagmateHero({
           d={`M ${GIRL_X - 24} ${SEAT_Y} L ${GIRL_X - 21} 142 q ${21} -12 ${42} 0 L ${GIRL_X + 24} ${SEAT_Y} Z`}
           fill={COLORS.girlTop}
         />
-        {/* inner arm, dropping to lap height and reaching behind the dogs */}
+        {/* Sleeve stops at the shoulder end of the arm, well short of the
+            dogs — no clothing should reach the middle of the picture. */}
         <Path
-          d={`M ${GIRL_X + 20} 148 Q ${GIRL_X + 44} 158 ${HANDS.x - 4} ${HANDS.y}`}
+          d={`M ${GIRL_X + 20} 148 Q ${GIRL_X + 28} 151 ${GIRL_X + 34} 154`}
           stroke={COLORS.girlTop}
           strokeWidth={9.5}
           strokeLinecap="round"
           fill="none"
         />
+        {/* Bare forearm from there to the clasp, so everything visible around
+            and between the dogs is skin. */}
         <Path
-          d={`M ${HANDS.x - 20} ${HANDS.y - 1} Q ${HANDS.x - 12} ${HANDS.y} ${HANDS.x - 3} ${HANDS.y}`}
+          d={`M ${GIRL_X + 32} 153 Q ${GIRL_X + 50} 162 ${HANDS.x - 3} ${HANDS.y}`}
           stroke={COLORS.skin}
-          strokeWidth={8}
+          strokeWidth={8.5}
           strokeLinecap="round"
           fill="none"
         />
@@ -166,16 +169,16 @@ export function WagmateHero({
           fill={COLORS.boyTop}
         />
         <Path
-          d={`M ${BOY_X - 22} 146 Q ${BOY_X - 46} 156 ${HANDS.x + 4} ${HANDS.y}`}
+          d={`M ${BOY_X - 22} 146 Q ${BOY_X - 30} 149 ${BOY_X - 36} 152`}
           stroke={COLORS.boyTop}
           strokeWidth={9.5}
           strokeLinecap="round"
           fill="none"
         />
         <Path
-          d={`M ${HANDS.x + 20} ${HANDS.y - 1} Q ${HANDS.x + 12} ${HANDS.y} ${HANDS.x + 3} ${HANDS.y}`}
+          d={`M ${BOY_X - 34} 151 Q ${BOY_X - 52} 160 ${HANDS.x + 3} ${HANDS.y}`}
           stroke={COLORS.skin}
-          strokeWidth={8}
+          strokeWidth={8.5}
           strokeLinecap="round"
           fill="none"
         />
