@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
@@ -9,10 +10,33 @@ import { api } from '../lib/api';
 // Required once per app so the auth popup/tab closes itself after redirect.
 WebBrowser.maybeCompleteAuthSession();
 
+// Where Google sends the browser back to after sign-in.
+//
+// Left to itself, expo-auth-session derives this from window.location.ORIGIN,
+// which drops any path. That is correct for a site served from a domain root
+// and wrong for one served from a subpath: on GitHub Pages the app lives at
+// /<repo>/, so the default sends users back to the domain root, where Wagmate
+// isn't — the callback would land on an unrelated page and the sign-in would
+// silently never complete. Registering that bare origin with Google would
+// make the error go away without making sign-in work.
+//
+// So it is pinned to the app's own base path. The trailing slash is kept
+// deliberately: without it GitHub Pages issues a redirect to add one, and
+// that hop can drop the URL fragment carrying the token.
+//
+// Native builds have no such ambiguity — they use a custom scheme — so this
+// only applies on web.
+const BASE_PATH = process.env.EXPO_PUBLIC_WAGMATE_BASE_URL || '';
+const webRedirectUri =
+  Platform.OS === 'web' && typeof window !== 'undefined'
+    ? `${window.location.origin}${BASE_PATH}/`
+    : undefined;
+
 const GOOGLE_CONFIG = {
   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
   androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  ...(webRedirectUri ? { redirectUri: webRedirectUri } : {}),
 };
 
 export const isGoogleSignInConfigured = Boolean(

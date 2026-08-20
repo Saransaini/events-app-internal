@@ -45,6 +45,12 @@ jobs:
           # rename or fork keeps working.
           WAGMATE_BASE_URL: /${{ github.event.repository.name }}
 
+          # Same value, exposed to the app itself rather than just the
+          # bundler. Google sign-in needs it to build a redirect URI that
+          # points at the app's subpath instead of the domain root — see
+          # src/hooks/useGoogleSignIn.ts.
+          EXPO_PUBLIC_WAGMATE_BASE_URL: /${{ github.event.repository.name }}
+
           # Firebase web config is designed to be public — these values
           # identify the project, they do not grant access to it. Every
           # request is still authorised by firestore.rules, which is covered
