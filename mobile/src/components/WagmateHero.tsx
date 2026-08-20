@@ -28,17 +28,15 @@ const SEAT_Y = WORDMARK_BASELINE - WORDMARK_SIZE * 0.72;
 const GIRL_X = 108;
 const BOY_X = 252;
 
-// The join sits low, at seated lap height alongside the dogs' haunches,
-// which is where two people sitting down would actually hold hands. The dogs
-// are painted after the arms, so each arm is interrupted where a dog crosses
-// it and the hands read as being behind the pair.
+// The join sits low, at seated lap height, which is where two people sitting
+// down would actually hold hands.
 //
-// The one thing that must not change: the clasp stays VISIBLE in the gap
-// between the dogs. A previous attempt hid it behind them, which left two
-// arms simply disappearing into the dogs' hindquarters and invited a reading
-// nobody wants on a sign-in screen. Drawn hands in clear space between the
-// two animals are what keep it legible — so the dogs' spacing and this
-// point's x are a pair, and moving either needs the other checked.
+// Paint order matters here and is easy to get backwards: the arms are drawn
+// AFTER the dogs, so both arms cross in front of them and stay visible end to
+// end with the clasp in plain view. Earlier versions painted the dogs last,
+// which cut each arm in half and left two arms disappearing into the dogs'
+// hindquarters — an unfortunate reading for a sign-in screen. Keep the arms
+// on top.
 const DOG_LEFT_X = 159;
 const DOG_RIGHT_X = 203;
 const HANDS = { x: 181, y: SEAT_Y - 12 };
@@ -130,24 +128,6 @@ export function WagmateHero({
           d={`M ${GIRL_X - 24} ${SEAT_Y} L ${GIRL_X - 21} 142 q ${21} -12 ${42} 0 L ${GIRL_X + 24} ${SEAT_Y} Z`}
           fill={COLORS.girlTop}
         />
-        {/* Sleeve stops at the shoulder end of the arm, well short of the
-            dogs — no clothing should reach the middle of the picture. */}
-        <Path
-          d={`M ${GIRL_X + 20} 148 Q ${GIRL_X + 28} 151 ${GIRL_X + 34} 154`}
-          stroke={COLORS.girlTop}
-          strokeWidth={9.5}
-          strokeLinecap="round"
-          fill="none"
-        />
-        {/* Bare forearm from there to the clasp, so everything visible around
-            and between the dogs is skin. */}
-        <Path
-          d={`M ${GIRL_X + 32} 153 Q ${GIRL_X + 50} 162 ${HANDS.x - 3} ${HANDS.y}`}
-          stroke={COLORS.skin}
-          strokeWidth={8.5}
-          strokeLinecap="round"
-          fill="none"
-        />
         <Path
           d={`M ${GIRL_X - 20} 110 q 0 -23 20 -23 q 20 0 20 23 l 3 38 q -23 9 -46 0 Z`}
           fill={COLORS.girlHair}
@@ -168,6 +148,34 @@ export function WagmateHero({
           d={`M ${BOY_X - 26} ${SEAT_Y} L ${BOY_X - 23} 140 q ${23} -13 ${46} 0 L ${BOY_X + 26} ${SEAT_Y} Z`}
           fill={COLORS.boyTop}
         />
+        <Circle cx={BOY_X} cy={108} r={19} fill={COLORS.boyHair} />
+        <Path d={`M ${BOY_X - 19} 114 q 19 10 38 0 l 0 -8 q -19 -8 -38 0 Z`} fill={COLORS.boyHair} />
+      </G>
+
+      {/* ---- The dogs, sitting between them ---- */}
+      <Dog x={DOG_LEFT_X} coat={COLORS.dogGold} ear={COLORS.dogEarGold} />
+      <Dog x={DOG_RIGHT_X} coat={COLORS.dogBrown} ear={COLORS.dogEarBrown} />
+
+      {/* ---- Their joined arms, painted last so nothing interrupts them ----
+          Both arms cross IN FRONT of the dogs and are visible end to end,
+          with the clasp in plain view. The sleeves still stop near each
+          shoulder, so the stretch that actually passes over the dogs is bare
+          forearm rather than clothing. */}
+      <G>
+        <Path
+          d={`M ${GIRL_X + 20} 148 Q ${GIRL_X + 28} 151 ${GIRL_X + 34} 154`}
+          stroke={COLORS.girlTop}
+          strokeWidth={9.5}
+          strokeLinecap="round"
+          fill="none"
+        />
+        <Path
+          d={`M ${GIRL_X + 32} 153 Q ${GIRL_X + 50} 162 ${HANDS.x - 3} ${HANDS.y}`}
+          stroke={COLORS.skin}
+          strokeWidth={8.5}
+          strokeLinecap="round"
+          fill="none"
+        />
         <Path
           d={`M ${BOY_X - 22} 146 Q ${BOY_X - 30} 149 ${BOY_X - 36} 152`}
           stroke={COLORS.boyTop}
@@ -182,17 +190,8 @@ export function WagmateHero({
           strokeLinecap="round"
           fill="none"
         />
-        <Circle cx={BOY_X} cy={108} r={19} fill={COLORS.boyHair} />
-        <Path d={`M ${BOY_X - 19} 114 q 19 10 38 0 l 0 -8 q -19 -8 -38 0 Z`} fill={COLORS.boyHair} />
+        <Circle cx={HANDS.x} cy={HANDS.y} r={6} fill={COLORS.skin} />
       </G>
-
-      {/* Their clasped hands, drawn before the dogs so the dogs overlap the
-          arms on either side and the join reads as being behind the pair. */}
-      <Circle cx={HANDS.x} cy={HANDS.y} r={6} fill={COLORS.skin} />
-
-      {/* ---- The dogs, painted over the arms to sit in front of them ---- */}
-      <Dog x={DOG_LEFT_X} coat={COLORS.dogGold} ear={COLORS.dogEarGold} />
-      <Dog x={DOG_RIGHT_X} coat={COLORS.dogBrown} ear={COLORS.dogEarBrown} />
 
       {/* A small heart above the inner side of each dog */}
       <Heart x={170} y={130} scale={0.28} />
