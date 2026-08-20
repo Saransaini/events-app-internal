@@ -4,6 +4,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ActivityIndicator, View } from 'react-native';
+import { useFonts } from 'expo-font';
+import { Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
 import { useAuth } from '../src/hooks/useAuth';
 
 const queryClient = new QueryClient();
@@ -40,11 +42,22 @@ function AuthGate() {
 }
 
 export default function RootLayout() {
+  // The wordmark is drawn as SVG text, which has no fallback rendering while
+  // a webfont is still loading — it would paint in the default serif and then
+  // snap. Holding the first frame until the face is ready avoids that flash.
+  const [fontsLoaded] = useFonts({ Baloo2_800ExtraBold });
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <AuthGate />
+          {fontsLoaded ? (
+            <AuthGate />
+          ) : (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator />
+            </View>
+          )}
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

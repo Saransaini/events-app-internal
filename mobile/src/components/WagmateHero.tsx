@@ -8,7 +8,7 @@ import Svg, {
 } from 'react-native-svg';
 
 // The login screen's hero: a couple sitting on top of the Wagmate wordmark
-// with their backs to us, holding hands above their two dogs.
+// with their backs to us, holding hands behind their two dogs.
 //
 // The figures sit ON the lettering, so their vertical placement is tied to
 // the wordmark's cap line rather than chosen freely. SEAT_Y below is that
@@ -17,45 +17,44 @@ import Svg, {
 // the type is resized.
 //
 // Only the vertical fit is exact. The word's rendered WIDTH varies slightly
-// with the platform's bold system font, which is why nothing is aligned to a
-// particular letter — the group is centred over the word as a whole and reads
-// correctly whether the type sets a little wide or narrow.
-//
-// The horizontal spacing is doing real work and is easy to break: the couple
-// are set far enough apart to leave a clear channel between them, because
-// both dogs AND the joined hands have to be legible in that gap. Moving them
-// closer merges the dogs into a single silhouette and buries the hands
-// behind them.
+// between typefaces, which is why nothing is aligned to a particular letter —
+// the group is centred over the word as a whole.
 
 const WORDMARK_BASELINE = 218;
 const WORDMARK_SIZE = 54;
-// Cap height runs ~0.72em in the bold grotesques this resolves to across
-// iOS, Android and web.
+// Cap height runs ~0.72em across the bold display faces used here.
 const SEAT_Y = WORDMARK_BASELINE - WORDMARK_SIZE * 0.72;
 
 const GIRL_X = 108;
 const BOY_X = 252;
-// The clasp sits low, at the dogs' shoulder height, and the dogs are painted
-// after it — so their arms run BEHIND the dogs and only the joined hands
-// show in the gap between them. (An earlier version arced the arms over the
-// dogs' heads, which read as a rainbow rather than a couple holding hands.)
-const HANDS = { x: 181, y: SEAT_Y - 15 };
 
-const DOG_LEFT_X = 163;
-const DOG_RIGHT_X = 199;
+// The dogs' bodies are sized and spaced to just overlap at the midline, and
+// they are painted AFTER the arms. That overlap is what hides the join: the
+// arms run down behind the dogs and meet out of sight, rather than the hands
+// showing through a gap between them. There is deliberately no drawn clasp —
+// the converging arms imply it, and any visible hand would sit in front of
+// the dogs, which is precisely what this arrangement avoids.
+//
+// The heads stay far enough apart to read as two animals, and the strong
+// coat contrast does the rest of that work.
+const DOG_LEFT_X = 169;
+const DOG_RIGHT_X = 193;
+const HAND_LEFT = { x: 175, y: SEAT_Y - 8 };
+const HAND_RIGHT = { x: 187, y: SEAT_Y - 8 };
 
 const COLORS = {
   ink: '#1f1f1f',
-  skin: '#eabc94',
+  // Only the necks show skin — the forearms run behind the dogs and are never
+  // drawn, since any visible hand would sit in front of them.
   skinShade: '#dda87e',
   girlHair: '#5c3a2e',
   girlTop: '#fe3c72',
   boyHair: '#2e2a28',
   boyTop: '#3f7fbf',
   dogGold: '#d99b54',
-  dogBrown: '#7a4a2e',
+  dogBrown: '#6f4126',
   dogEarGold: '#a9702f',
-  dogEarBrown: '#573320',
+  dogEarBrown: '#4a2a17',
   heart: '#fe3c72',
 };
 
@@ -71,54 +70,31 @@ function Heart({ x, y, scale = 1 }: { x: number; y: number; scale?: number }) {
 }
 
 // Sitting dog seen from behind, haunches planted on the letters.
-//
-// The ears carry the whole read here. Upright pointed triangles plus a tail
-// curling up over the back is a cat silhouette, near enough that an earlier
-// version of this was unmistakably two cats on a dog app. Long ears HANGING
-// past the jaw, and a tail low and out to the side, is what makes these
-// unambiguously dogs at favicon size.
-function Dog({
-  x,
-  coat,
-  ear,
-  tailDir = 1,
-}: {
-  x: number;
-  coat: string;
-  ear: string;
-  tailDir?: number;
-}) {
+// No tail: each one landed exactly where an arm disappears behind the dog,
+// so it read as a hand curling around the dog's front — the opposite of the
+// arrangement everything else here is built to achieve. A dog sitting with
+// its back to us has little tail showing regardless.
+function Dog({ x, coat, ear }: { x: number; coat: string; ear: string }) {
   const headY = SEAT_Y - 25;
   return (
     <G>
-      {/* tail: low, sweeping out to the side, never up over the back */}
-      <Path
-        d={`M ${x + tailDir * 9} ${SEAT_Y - 3} q ${tailDir * 10} 1 ${tailDir * 12} -7`}
-        stroke={coat}
-        strokeWidth={4.5}
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* haunches */}
-      <Path d={`M ${x - 11} ${SEAT_Y} q 0 -17 11 -17 q 11 0 11 17 Z`} fill={coat} />
-      {/* head, a little oversized for puppy proportions */}
+      <Path d={`M ${x - 13} ${SEAT_Y} q 0 -18 13 -18 q 13 0 13 18 Z`} fill={coat} />
       <Circle cx={x} cy={headY} r={9.5} fill={coat} />
-      {/* floppy ears hanging either side of the head */}
       <Ellipse
-        cx={x - 9}
-        cy={headY + 3}
-        rx={4.2}
-        ry={8.5}
+        cx={x - 7.5}
+        cy={headY - 4}
+        rx={3.2}
+        ry={5.8}
         fill={ear}
-        transform={`rotate(-14 ${x - 9} ${headY + 3})`}
+        transform={`rotate(-24 ${x - 7.5} ${headY - 4})`}
       />
       <Ellipse
-        cx={x + 9}
-        cy={headY + 3}
-        rx={4.2}
-        ry={8.5}
+        cx={x + 7.5}
+        cy={headY - 4}
+        rx={3.2}
+        ry={5.8}
         fill={ear}
-        transform={`rotate(14 ${x + 9} ${headY + 3})`}
+        transform={`rotate(24 ${x + 7.5} ${headY - 4})`}
       />
     </G>
   );
@@ -126,43 +102,24 @@ function Dog({
 
 export function WagmateHero({
   width = 320,
-  fontFamily,
+  fontFamily = 'Baloo2_800ExtraBold',
 }: {
   width?: number;
-  /** Wordmark typeface. Omitted falls back to the platform's bold system font. */
+  /** Wordmark typeface; falls back to the platform's bold system font. */
   fontFamily?: string;
 }) {
   const height = (width * 250) / 360;
 
   return (
     <Svg width={width} height={height} viewBox="0 0 360 250">
-      {/* The wordmark is painted FIRST so everything sitting on it overlaps
-          the tops of the letters rather than being clipped by them. That
-          ordering is what sells "sitting on top of" instead of "standing
-          behind", and it also absorbs the small differences in cap height
-          between platform fonts: whatever the letters do, the figures are
-          drawn over them and stay whole. */}
-      <SvgText
-        x={180}
-        y={WORDMARK_BASELINE}
-        fontSize={WORDMARK_SIZE}
-        fontWeight="800"
-        fontFamily={fontFamily}
-        textAnchor="middle"
-        fill={COLORS.ink}
-      >
-        Wagmate
-      </SvgText>
-
-      {/* A small heart off each of their outer shoulders */}
-      <Heart x={62} y={108} scale={0.62} />
-      <Heart x={298} y={102} scale={0.62} />
+      {/* A heart tucked between each of their heads and shoulders */}
+      <Heart x={74} y={120} scale={0.6} />
+      <Heart x={286} y={116} scale={0.6} />
 
       {/* ---- Girl, on the left ---- */}
       <G>
-        {/* outer arm, hanging down her far side */}
         <Path
-          d={`M ${GIRL_X - 21} 147 q -6 12 -5 ${SEAT_Y - 154}`}
+          d={`M ${GIRL_X - 22} 150 q -9 13 -7 25`}
           stroke={COLORS.girlTop}
           strokeWidth={10}
           strokeLinecap="round"
@@ -173,18 +130,11 @@ export function WagmateHero({
           d={`M ${GIRL_X - 24} ${SEAT_Y} L ${GIRL_X - 21} 142 q ${21} -12 ${42} 0 L ${GIRL_X + 24} ${SEAT_Y} Z`}
           fill={COLORS.girlTop}
         />
-        {/* inner arm, dropping down and across to meet his behind the dogs */}
+        {/* inner arm, dropping down behind the dogs */}
         <Path
-          d={`M ${GIRL_X + 19} 146 Q ${GIRL_X + 38} 160 ${HANDS.x - 8} ${HANDS.y}`}
+          d={`M ${GIRL_X + 19} 146 Q ${GIRL_X + 40} 162 ${HAND_LEFT.x} ${HAND_LEFT.y}`}
           stroke={COLORS.girlTop}
           strokeWidth={9.5}
-          strokeLinecap="round"
-          fill="none"
-        />
-        <Path
-          d={`M ${HANDS.x - 24} ${HANDS.y - 1} Q ${HANDS.x - 15} ${HANDS.y} ${HANDS.x - 5} ${HANDS.y}`}
-          stroke={COLORS.skin}
-          strokeWidth={8.5}
           strokeLinecap="round"
           fill="none"
         />
@@ -196,9 +146,8 @@ export function WagmateHero({
 
       {/* ---- Boy, on the right ---- */}
       <G>
-        {/* outer arm, hanging down his far side */}
         <Path
-          d={`M ${BOY_X + 23} 145 q 6 12 5 ${SEAT_Y - 152}`}
+          d={`M ${BOY_X + 22} 148 q 9 13 7 27`}
           stroke={COLORS.boyTop}
           strokeWidth={10}
           strokeLinecap="round"
@@ -210,16 +159,9 @@ export function WagmateHero({
           fill={COLORS.boyTop}
         />
         <Path
-          d={`M ${BOY_X - 21} 144 Q ${BOY_X - 40} 158 ${HANDS.x + 8} ${HANDS.y}`}
+          d={`M ${BOY_X - 21} 144 Q ${BOY_X - 40} 160 ${HAND_RIGHT.x} ${HAND_RIGHT.y}`}
           stroke={COLORS.boyTop}
           strokeWidth={9.5}
-          strokeLinecap="round"
-          fill="none"
-        />
-        <Path
-          d={`M ${HANDS.x + 24} ${HANDS.y - 1} Q ${HANDS.x + 15} ${HANDS.y} ${HANDS.x + 5} ${HANDS.y}`}
-          stroke={COLORS.skin}
-          strokeWidth={8.5}
           strokeLinecap="round"
           fill="none"
         />
@@ -227,12 +169,26 @@ export function WagmateHero({
         <Path d={`M ${BOY_X - 19} 114 q 19 10 38 0 l 0 -8 q -19 -8 -38 0 Z`} fill={COLORS.boyHair} />
       </G>
 
-      {/* Clasped hands last, so the join reads on top of both arms */}
-      <Circle cx={HANDS.x} cy={HANDS.y + 2} r={6} fill={COLORS.skin} />
+      {/* ---- The dogs, painted over the arms so the join stays hidden ---- */}
+      <Dog x={DOG_LEFT_X} coat={COLORS.dogGold} ear={COLORS.dogEarGold} />
+      <Dog x={DOG_RIGHT_X} coat={COLORS.dogBrown} ear={COLORS.dogEarBrown} />
 
-      {/* ---- Their two dogs, between them ---- */}
-      <Dog x={DOG_LEFT_X} coat={COLORS.dogGold} ear={COLORS.dogEarGold} tailDir={-1} />
-      <Dog x={DOG_RIGHT_X} coat={COLORS.dogBrown} ear={COLORS.dogEarBrown} tailDir={1} />
+      {/* A small heart on the inner side of each dog */}
+      <Heart x={175} y={137} scale={0.28} />
+      <Heart x={189} y={130} scale={0.28} />
+
+      {/* ---- The wordmark they're all sitting on ---- */}
+      <SvgText
+        x={180}
+        y={WORDMARK_BASELINE}
+        fontSize={WORDMARK_SIZE}
+        fontWeight="800"
+        fontFamily={fontFamily}
+        textAnchor="middle"
+        fill={COLORS.ink}
+      >
+        Wagmate
+      </SvgText>
     </Svg>
   );
 }
