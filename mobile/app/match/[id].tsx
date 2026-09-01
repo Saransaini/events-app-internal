@@ -108,8 +108,15 @@ export default function MatchChat() {
         keyExtractor={(message) => message._id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <View style={[styles.bubble, item.senderId === myUid ? styles.myBubble : styles.theirBubble]}>
+          <View
+            style={[
+              styles.bubble,
+              item.senderId === myUid ? styles.myBubble : styles.theirBubble,
+              item.pending && styles.pendingBubble,
+            ]}
+          >
             <Text style={item.senderId === myUid ? styles.myText : styles.theirText}>{item.text}</Text>
+            {item.pending && <Text style={styles.pendingLabel}>Sending…</Text>}
           </View>
         )}
         ListEmptyComponent={
@@ -146,6 +153,8 @@ const styles = StyleSheet.create({
   bubble: { maxWidth: '80%', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 8 },
   myBubble: { backgroundColor: '#fe3c72', alignSelf: 'flex-end' },
   theirBubble: { backgroundColor: '#f1f1f1', alignSelf: 'flex-start' },
+  pendingBubble: { opacity: 0.6 },
+  pendingLabel: { color: '#fff', fontSize: 10, marginTop: 2, opacity: 0.8 },
   myText: { color: '#fff' },
   theirText: { color: '#333' },
   inputRow: {

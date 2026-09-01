@@ -42,4 +42,7 @@ export interface Message {
   senderId: string;
   text: string;
   createdAt: unknown;
+  /** True while this message is written locally but not yet confirmed by
+   * the server — i.e. sent while offline, or just barely sent. */
+  pending: boolean;
 }

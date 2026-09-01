@@ -2,13 +2,13 @@ import 'react-native-gesture-handler';
 import { Redirect, Stack, usePathname } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { ActivityIndicator, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
 import { useAuth } from '../src/hooks/useAuth';
-
-const queryClient = new QueryClient();
+import { queryClient, asyncStoragePersister } from '../src/lib/offlineQuery';
+import { OfflineBanner } from '../src/components/OfflineBanner';
 
 function AuthGate() {
   const { user, initializing } = useAuth();
@@ -50,7 +50,11 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister: asyncStoragePersister }}
+        >
+          <OfflineBanner />
           {fontsLoaded ? (
             <AuthGate />
           ) : (
@@ -58,7 +62,7 @@ export default function RootLayout() {
               <ActivityIndicator />
             </View>
           )}
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
