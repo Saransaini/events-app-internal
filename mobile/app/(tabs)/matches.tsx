@@ -1,18 +1,18 @@
-import { View, Text, Image, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { useMemo } from 'react';
+import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useMatches } from '../../src/hooks/useMatches';
-import { useUser } from '../../src/hooks/useUser';
+import { useUsers } from '../../src/hooks/useUsers';
 import { auth } from '../../src/lib/firebase';
-import type { Match } from '../../src/types/models';
+import type { Match, UserProfile } from '../../src/types/models';
 
-function MatchRow({ match }: { match: Match }) {
-  const myUid = auth.currentUser?.uid;
-  const otherUid = match.uids.find((uid) => uid !== myUid);
-  const { data: other } = useUser(otherUid);
-
+function MatchRow({ match, other }: { match: Match; other: UserProfile | undefined }) {
   return (
     <Pressable style={styles.row} onPress={() => router.push(`/match/${match._id}`)}>
-      {other?.dog?.photos[0] && <Image source={{ uri: other.dog.photos[0] }} style={styles.thumb} />}
+      {other?.dog?.photos[0] && (
+        <Image source={{ uri: other.dog.photos[0] }} style={styles.thumb} contentFit="cover" />
+      )}
       <View style={styles.rowText}>
         <Text style={styles.title}>{other ? other.displayName : 'It’s a match!'}</Text>
         {other?.dog && <Text style={styles.subtitle}>with {other.dog.name}</Text>}
@@ -23,6 +23,18 @@ function MatchRow({ match }: { match: Match }) {
 
 export default function Matches() {
   const { data: matches, isLoading } = useMatches();
+  const myUid = auth.currentUser?.uid;
+
+  // One batched read for every match's other-person profile, instead of a
+  // separate Firestore round-trip per row (that's what a useUser-per-row
+  // version of this screen used to do — noticeably slower to populate with
+  // more than a couple of matches, and needlessly more reads).
+  const otherUids = useMemo(
+    () => (matches || []).map((m) => m.uids.find((uid) => uid !== myUid)).filter((uid): uid is string => !!uid),
+    [matches, myUid]
+  );
+  const { data: others } = useUsers(otherUids);
+  const othersByUid = useMemo(() => new Map((others || []).map((u) => [u._id, u])), [others]);
 
   if (isLoading) {
     return (
@@ -45,7 +57,9 @@ export default function Matches() {
       data={matches}
       keyExtractor={(match) => match._id}
       contentContainerStyle={styles.list}
-      renderItem={({ item }) => <MatchRow match={item} />}
+      renderItem={({ item }) => (
+        <MatchRow match={item} other={othersByUid.get(item.uids.find((uid) => uid !== myUid) || '')} />
+      )}
     />
   );
 }

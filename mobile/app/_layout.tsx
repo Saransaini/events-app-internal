@@ -5,7 +5,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { ActivityIndicator, View } from 'react-native';
 import { useFonts } from 'expo-font';
-import { Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
+// Deliberately not `import { Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2'`:
+// that package's barrel file requires all five weights unconditionally at
+// module scope, so Metro bundles every one regardless of which named export
+// is actually used — confirmed by inspecting the exported web bundle, where
+// it accounted for ~2MB of dead weight (four unused font files) out of a
+// ~3.8MB total. Importing the one file directly bypasses the barrel.
+// @ts-expect-error - no type declarations for a direct .ttf import path
+import Baloo2_800ExtraBold from '@expo-google-fonts/baloo-2/800ExtraBold/Baloo2_800ExtraBold.ttf';
 import { useAuth } from '../src/hooks/useAuth';
 import { queryClient, asyncStoragePersister } from '../src/lib/offlineQuery';
 import { OfflineBanner } from '../src/components/OfflineBanner';

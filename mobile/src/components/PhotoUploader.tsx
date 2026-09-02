@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { View, Image, Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../lib/firebase';
 import { auth } from '../lib/firebase';
@@ -10,6 +12,15 @@ interface Props {
   onAdd: (url: string) => void;
   onRemove: (url: string) => void;
 }
+
+// A modern phone photo is commonly 3000-4000px wide and several MB — this is
+// the biggest single lever on how this app feels, since that same file gets
+// re-downloaded by every discover-card view, every match's profile look, and
+// the owner's own profile screen. Resizing to what a card can actually show
+// before it ever leaves the device cuts upload time, storage cost, and every
+// later view's load time at once. 1080px is generous headroom for a phone
+// screen; nothing in this app displays photos anywhere near that large.
+const MAX_DIMENSION = 1080;
 
 export function PhotoUploader({ photos, onAdd, onRemove }: Props) {
   const [uploading, setUploading] = useState(false);
@@ -27,7 +38,26 @@ export function PhotoUploader({ photos, onAdd, onRemove }: Props) {
     setUploading(true);
     try {
       const asset = result.assets[0];
-      const response = await fetch(asset.uri);
+      const longEdge = Math.max(asset.width, asset.height);
+      const resized = await manipulateAsync(
+        asset.uri,
+        // Only resize if it's actually larger than the cap — manipulateAsync
+        // always re-encodes, and there's no reason to pay that cost, or risk
+        // upscaling, on an image that's already small.
+        longEdge > MAX_DIMENSION
+          ? [
+              {
+                resize:
+                  asset.width >= asset.height
+                    ? { width: MAX_DIMENSION }
+                    : { height: MAX_DIMENSION },
+              },
+            ]
+          : [],
+        { compress: 0.7, format: SaveFormat.JPEG }
+      );
+
+      const response = await fetch(resized.uri);
       const blob = await response.blob();
       const uid = auth.currentUser?.uid || 'anonymous';
       const path = `dog-photos/${uid}/${Date.now()}.jpg`;
@@ -45,7 +75,7 @@ export function PhotoUploader({ photos, onAdd, onRemove }: Props) {
       <View style={styles.row}>
         {photos.map((url) => (
           <Pressable key={url} onLongPress={() => onRemove(url)} style={styles.photoWrap}>
-            <Image source={{ uri: url }} style={styles.photo} />
+            <Image source={{ uri: url }} style={styles.photo} contentFit="cover" />
           </Pressable>
         ))}
         <Pressable style={styles.addButton} onPress={pickAndUpload} disabled={uploading}>

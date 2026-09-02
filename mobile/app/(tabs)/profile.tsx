@@ -1,4 +1,5 @@
-import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../src/lib/firebase';
 import { useMyProfile } from '../../src/hooks/useMyProfile';
@@ -20,7 +21,9 @@ export default function Profile() {
     <ScrollView contentContainerStyle={styles.container}>
       {profile ? (
         <View style={styles.card}>
-          {dog?.photos[0] && <Image source={{ uri: dog.photos[0] }} style={styles.photo} />}
+          {dog?.photos[0] && (
+            <Image source={{ uri: dog.photos[0] }} style={styles.photo} contentFit="cover" transition={150} />
+          )}
           <Text style={styles.name}>{profile.displayName}</Text>
           {dog && (
             <Text style={styles.dogLine}>

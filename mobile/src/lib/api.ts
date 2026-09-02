@@ -19,6 +19,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  documentId,
   getDoc,
   getDocs,
   limit as fsLimit,
@@ -300,6 +301,20 @@ export const api = {
     const snapshot = await getDoc(doc(firestore, 'publicProfiles', id));
     if (!snapshot.exists()) throw new Error('User not found');
     return toPublicProfile(snapshot);
+  },
+
+  // Batches the "other person in this match" lookup for the whole matches
+  // list into one query instead of one per row. Firestore's documentId()
+  // 'in' filter caps at 30 ids — comfortably beyond how many matches this
+  // app expects someone to have — so callers with more would need to chunk;
+  // not done here since that's out of range for v1.
+  getUsers: async (ids: string[]): Promise<UserProfile[]> => {
+    requireUid();
+    if (ids.length === 0) return [];
+    const snapshot = await getDocs(
+      query(collection(firestore, 'publicProfiles'), where(documentId(), 'in', ids))
+    );
+    return snapshot.docs.map(toPublicProfile);
   },
 };
 

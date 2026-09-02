@@ -22,6 +22,7 @@ const {
     getDocs,
     query,
     where,
+    documentId,
 } = require('firebase/firestore');
 
 const ALICE = 'alice';
@@ -120,6 +121,21 @@ describe('firestore.rules', () => {
         it('rejects an email field, keeping emails out of world-readable documents', async () => {
             await assertFails(
                 setDoc(doc(db(ALICE), 'publicProfiles', ALICE), { displayName: 'Alice', email: 'alice@example.com' })
+            );
+        });
+
+        it('allows a signed-in user to batch-read several profiles in one query, which the matches list relies on', async () => {
+            await seed((f) => setDoc(doc(f, 'publicProfiles', BOB), { displayName: 'Bob', active: true }));
+            await seed((f) => setDoc(doc(f, 'publicProfiles', CAROL), { displayName: 'Carol', active: true }));
+            await assertSucceeds(
+                getDocs(query(collection(db(ALICE), 'publicProfiles'), where(documentId(), 'in', [BOB, CAROL])))
+            );
+        });
+
+        it('denies that same batch query when signed out', async () => {
+            await seed((f) => setDoc(doc(f, 'publicProfiles', BOB), { displayName: 'Bob', active: true }));
+            await assertFails(
+                getDocs(query(collection(anonDb(), 'publicProfiles'), where(documentId(), 'in', [BOB])))
             );
         });
     });

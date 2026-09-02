@@ -1,4 +1,5 @@
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import type { UserProfile } from '../types/models';
 import { IntentBadge } from './IntentBadge';
 
@@ -9,7 +10,10 @@ export function SwipeCard({ person }: { person: UserProfile }) {
   return (
     <View style={styles.card}>
       {photo ? (
-        <Image source={{ uri: photo }} style={styles.photo} />
+        // expo-image disk-caches by URL: swiping back to a card already
+        // seen this session (or a previous one) redraws instantly with no
+        // network round-trip, unlike RN's built-in Image.
+        <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" transition={150} />
       ) : (
         <View style={[styles.photo, styles.photoPlaceholder]}>
           <Text style={styles.placeholderText}>🐾</Text>
