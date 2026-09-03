@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
@@ -20,13 +21,25 @@ WebBrowser.maybeCompleteAuthSession();
 // silently never complete. Registering that bare origin with Google would
 // make the error go away without making sign-in work.
 //
-// So it is pinned to the app's own base path. The trailing slash is kept
-// deliberately: without it GitHub Pages issues a redirect to add one, and
-// that hop can drop the URL fragment carrying the token.
+// So it is pinned to the app's own base path — read from
+// Constants.expoConfig.experiments.baseUrl, the SAME resolved config value
+// Expo Router itself uses to prefix every route and asset URL (set in
+// app.config.js from WAGMATE_BASE_URL at build time). This used to be a
+// second, separately-injected env var (EXPO_PUBLIC_WAGMATE_BASE_URL)
+// threaded through independently; in practice that value did not reliably
+// end up inlined into the bundle — confirmed by inspecting a real build,
+// where it silently evaluated to empty, sending Google a redirect URI with
+// no path at all and breaking sign-in on the live site with no visible
+// error on this end. Reading the one value Expo Router already resolves
+// correctly removes the second copy that could get out of sync.
+//
+// The trailing slash is kept deliberately: without it GitHub Pages issues a
+// redirect to add one, and that hop can drop the URL fragment carrying the
+// token.
 //
 // Native builds have no such ambiguity — they use a custom scheme — so this
 // only applies on web.
-const BASE_PATH = process.env.EXPO_PUBLIC_WAGMATE_BASE_URL || '';
+const BASE_PATH = Constants.expoConfig?.experiments?.baseUrl || '';
 const webRedirectUri =
   Platform.OS === 'web' && typeof window !== 'undefined'
     ? `${window.location.origin}${BASE_PATH}/`
