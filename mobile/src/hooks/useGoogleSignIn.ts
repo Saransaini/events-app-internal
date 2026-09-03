@@ -56,13 +56,6 @@ export const isGoogleSignInConfigured = Boolean(
   GOOGLE_CONFIG.iosClientId || GOOGLE_CONFIG.androidClientId || GOOGLE_CONFIG.webClientId
 );
 
-// TEMPORARY diagnostic export — console.log is stripped from production
-// exports, so this is rendered directly in the UI instead to get a
-// ground-truth read of what's actually computed on the live site. Revert
-// once confirmed.
-export const __DEBUG_REDIRECT_URI = webRedirectUri;
-export const __DEBUG_BASE_PATH = BASE_PATH;
-
 // Exchanges a Google ID token for a Firebase credential, then routes to
 // onboarding (new user) or straight into the app (returning user) depending
 // on whether their profile already has a dog. Works the same for sign-up and
