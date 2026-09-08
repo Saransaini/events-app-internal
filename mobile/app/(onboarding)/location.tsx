@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
 import { requestCurrentLocation } from '../../src/lib/geolocation';
+import { zipToLatLng } from '../../src/lib/zipLookup';
 import { api } from '../../src/lib/api';
 
 export default function LocationStep() {
@@ -10,6 +11,7 @@ export default function LocationStep() {
   const [requesting, setRequesting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [zip, setZip] = useState('');
 
   async function handleRequestLocation() {
     setRequesting(true);
@@ -24,6 +26,16 @@ export default function LocationStep() {
     } finally {
       setRequesting(false);
     }
+  }
+
+  function handleUseZip() {
+    setError(null);
+    const result = zipToLatLng(zip);
+    if (!result) {
+      setError("Couldn't find that ZIP code — check it and try again.");
+      return;
+    }
+    setLocation(result);
   }
 
   async function handleFinish() {
@@ -62,9 +74,31 @@ export default function LocationStep() {
           Location captured: {location.lat.toFixed(3)}, {location.lng.toFixed(3)}
         </Text>
       ) : (
-        <Pressable style={styles.secondaryButton} onPress={handleRequestLocation} disabled={requesting}>
-          {requesting ? <ActivityIndicator /> : <Text style={styles.secondaryButtonText}>Share my location</Text>}
-        </Pressable>
+        <>
+          <Pressable style={styles.secondaryButton} onPress={handleRequestLocation} disabled={requesting}>
+            {requesting ? <ActivityIndicator /> : <Text style={styles.secondaryButtonText}>Share my location</Text>}
+          </Pressable>
+
+          <Text style={styles.orText}>or</Text>
+
+          <View style={styles.zipRow}>
+            <TextInput
+              style={styles.zipInput}
+              placeholder="ZIP code"
+              value={zip}
+              onChangeText={setZip}
+              keyboardType="number-pad"
+              maxLength={5}
+            />
+            <Pressable
+              style={[styles.zipButton, zip.length !== 5 && styles.buttonDisabled]}
+              onPress={handleUseZip}
+              disabled={zip.length !== 5}
+            >
+              <Text style={styles.secondaryButtonText}>Use ZIP</Text>
+            </Pressable>
+          </View>
+        </>
       )}
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -87,6 +121,24 @@ const styles = StyleSheet.create({
   locationText: { fontSize: 16 },
   secondaryButton: { borderWidth: 1, borderColor: '#fe3c72', borderRadius: 8, padding: 14, alignItems: 'center' },
   secondaryButtonText: { color: '#fe3c72', fontWeight: '600' },
+  orText: { color: '#999', textAlign: 'center' },
+  zipRow: { flexDirection: 'row', gap: 8 },
+  zipInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 16,
+  },
+  zipButton: {
+    borderWidth: 1,
+    borderColor: '#fe3c72',
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   button: { backgroundColor: '#fe3c72', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 12 },
   buttonDisabled: { opacity: 0.4 },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
