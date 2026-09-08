@@ -24,6 +24,7 @@ const MAX_DIMENSION = 1080;
 
 export function PhotoUploader({ photos, onAdd, onRemove }: Props) {
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function pickAndUpload() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -36,6 +37,7 @@ export function PhotoUploader({ photos, onAdd, onRemove }: Props) {
     if (result.canceled || !result.assets?.[0]) return;
 
     setUploading(true);
+    setError(null);
     try {
       const asset = result.assets[0];
       const longEdge = Math.max(asset.width, asset.height);
@@ -65,6 +67,8 @@ export function PhotoUploader({ photos, onAdd, onRemove }: Props) {
       await uploadBytes(storageRef, blob);
       const url = await getDownloadURL(storageRef);
       onAdd(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Photo upload failed');
     } finally {
       setUploading(false);
     }
@@ -83,6 +87,7 @@ export function PhotoUploader({ photos, onAdd, onRemove }: Props) {
         </Pressable>
       </View>
       <Text style={styles.hint}>Long-press a photo to remove it</Text>
+      {error && <Text style={styles.error}>{error}</Text>}
     </View>
   );
 }
@@ -103,4 +108,5 @@ const styles = StyleSheet.create({
   },
   addButtonText: { fontSize: 32, color: '#999' },
   hint: { color: '#999', fontSize: 12, marginTop: 6 },
+  error: { color: '#c0392b', fontSize: 12, marginTop: 6 },
 });
