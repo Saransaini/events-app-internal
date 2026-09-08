@@ -1,7 +1,9 @@
 import { QueryClient, onlineManager } from '@tanstack/react-query';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { enableNetwork, disableNetwork } from '@firebase/firestore';
 import { subscribeToConnectivity } from './connectivity';
+import { firestore } from './firebase';
 
 // Every server read in this app (profile, discover feed, matches list, a
 // match's other-person profile) goes through React Query, so persisting its
@@ -30,4 +32,19 @@ export const asyncStoragePersister = createAsyncStoragePersister({
 // / 'offline'), which does not exist on native and would leave every device
 // permanently reported "online." See connectivity.ts for the real signal
 // used instead, and why it isn't just NetInfo alone.
-onlineManager.setEventListener(subscribeToConnectivity);
+//
+// Firestore's web SDK does its own, independent online/offline tracking —
+// it listens to the same raw browser signals connectivity.ts already works
+// around (including the stray-event problem), so a spurious 'offline' can
+// leave Firestore internally convinced it's offline (getDoc/getDocs then
+// reject with "Failed to get document because the client is offline")
+// even after connectivity.ts's own recheck has already cleared our banner.
+// Explicitly driving enableNetwork/disableNetwork off the same signal this
+// app already trusts keeps Firestore's belief from silently diverging from
+// what the rest of the app (and the user) can see.
+onlineManager.setEventListener((setOnline) =>
+  subscribeToConnectivity((online) => {
+    setOnline(online);
+    (online ? enableNetwork(firestore) : disableNetwork(firestore)).catch(() => {});
+  })
+);
