@@ -41,10 +41,8 @@ jobs:
         working-directory: mobile
         env:
           # Pages serves this repo at /<repo-name>/, not at the domain root,
-          # so asset URLs (and Google sign-in's redirect URI, which reads
-          # this back at runtime via Constants.expoConfig.experiments.baseUrl
-          # — see src/hooks/useGoogleSignIn.ts) need that prefix. Derived
-          # from the repo name so a rename or fork keeps working.
+          # so asset URLs need that prefix. Derived from the repo name so a
+          # rename or fork keeps working.
           WAGMATE_BASE_URL: /${{ github.event.repository.name }}
 
           # Firebase web config is designed to be public — these values
@@ -61,9 +59,13 @@ jobs:
           EXPO_PUBLIC_FIREBASE_APP_ID: 1:3345060430:web:4a051c0aa4f820ca66a91f
 
           # Google Identity Services client for web sign-in (see
-          # src/hooks/useGoogleSignIn.ts). Not a secret — it identifies the
+          # src/hooks/useGoogleSignIn.ts). Must match Firebase Console >
+          # Authentication > Sign-in method > Google > "Web SDK
+          # configuration" exactly — Firebase's signInWithCredential() only
+          # trusts tokens issued to that specific client, not just any
+          # valid Google OAuth client. Not a secret — it identifies the
           # OAuth client, same as the Firebase config above.
-          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: 811920341831-kgfhomd1bb09nno0s9trn0k0kqr0rloe.apps.googleusercontent.com
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: 3345060430-l40gsadi8s32bdbnjkuhsaao9sschf0t.apps.googleusercontent.com
         run: npx expo export --platform web
 
       - name: Prepare output for GitHub Pages
