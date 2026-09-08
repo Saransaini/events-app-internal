@@ -20,8 +20,9 @@ import {
   deleteDoc,
   doc,
   documentId,
-  getDoc,
-  getDocs,
+  enableNetwork,
+  getDoc as getDocRaw,
+  getDocs as getDocsRaw,
   limit as fsLimit,
   query,
   serverTimestamp,
@@ -29,7 +30,10 @@ import {
   where,
   writeBatch,
   type DocumentData,
+  type DocumentReference,
   type DocumentSnapshot,
+  type Query,
+  type QuerySnapshot,
 } from '@firebase/firestore';
 import { auth, firestore } from './firebase';
 import { coarsenLocation, haversineDistanceKm } from './geo';
@@ -58,6 +62,38 @@ function requireUid(): string {
 
 function isPermissionDenied(err: unknown): boolean {
   return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'permission-denied';
+}
+
+// getDoc/getDocs reject immediately with a FirestoreError whose code is
+// 'unavailable' ("Failed to get document because the client is offline")
+// whenever Firestore currently believes it's offline — including a stale
+// belief left over from a connectivity blip that has since cleared (see
+// connectivity.ts and offlineQuery.ts for how that belief is tracked and
+// resynced). Retrying once after nudging Firestore back online covers
+// that gap without needing the underlying online/offline signal to be
+// perfectly race-free.
+function isUnavailable(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'unavailable';
+}
+
+async function getDoc<T = DocumentData>(reference: DocumentReference<T>): Promise<DocumentSnapshot<T>> {
+  try {
+    return await getDocRaw(reference);
+  } catch (err) {
+    if (!isUnavailable(err)) throw err;
+    await enableNetwork(firestore).catch(() => {});
+    return await getDocRaw(reference);
+  }
+}
+
+async function getDocs<T = DocumentData>(q: Query<T>): Promise<QuerySnapshot<T>> {
+  try {
+    return await getDocsRaw(q);
+  } catch (err) {
+    if (!isUnavailable(err)) throw err;
+    await enableNetwork(firestore).catch(() => {});
+    return await getDocsRaw(q);
+  }
 }
 
 function buildDog(input: Partial<Dog> | undefined, existing?: Dog): Dog | undefined {
