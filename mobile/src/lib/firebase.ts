@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeAuth } from 'firebase/auth';
+import { initializeAuth, browserLocalPersistence, browserPopupRedirectResolver } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -32,12 +32,21 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 // getReactNativePersistence only exists in @firebase/auth's "react-native"
 // build — on web, Metro resolves the browser build instead, where it's
-// undefined, so this app must only ever be used on native. On web, plain
-// initializeApp lets the SDK fall back to its own browser-appropriate
-// default persistence.
+// undefined, so this app must only ever be used on native.
+//
+// On web, initializeAuth() with no config leaves the instance without a
+// popupRedirectResolver at all, which is required for signInWithRedirect /
+// getRedirectResult (useGoogleSignIn.ts) — without it those throw
+// auth/argument-error. browserLocalPersistence is required alongside it:
+// signInWithRedirect stashes the pending sign-in in storage right before
+// navigating away to Google, and that storage is what survives the full
+// page reload on the way back for getRedirectResult to read.
 export const auth =
   Platform.OS === 'web'
-    ? initializeAuth(app)
+    ? initializeAuth(app, {
+        persistence: browserLocalPersistence,
+        popupRedirectResolver: browserPopupRedirectResolver,
+      })
     : initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
 
 export const storage = getStorage(app);
