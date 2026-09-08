@@ -12,6 +12,7 @@ export default function LocationStep() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [zip, setZip] = useState('');
+  const [locationLabel, setLocationLabel] = useState<string | null>(null);
 
   async function handleRequestLocation() {
     setRequesting(true);
@@ -35,7 +36,8 @@ export default function LocationStep() {
       setError("Couldn't find that ZIP code — check it and try again.");
       return;
     }
-    setLocation(result);
+    setLocation({ lat: result.lat, lng: result.lng });
+    setLocationLabel(result.label);
   }
 
   async function handleFinish() {
@@ -71,7 +73,7 @@ export default function LocationStep() {
 
       {location ? (
         <Text style={styles.locationText}>
-          Location captured: {location.lat.toFixed(3)}, {location.lng.toFixed(3)}
+          {locationLabel ? `Location set: ${locationLabel}` : `Location captured: ${location.lat.toFixed(3)}, ${location.lng.toFixed(3)}`}
         </Text>
       ) : (
         <>
