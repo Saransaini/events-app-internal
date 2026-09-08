@@ -1,29 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
-import {
-  GoogleAuthProvider,
-  signInWithCredential,
-  signInWithRedirect,
-  getRedirectResult,
-  type UserCredential,
-} from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential, type UserCredential } from 'firebase/auth';
 import { router } from 'expo-router';
 import { auth } from '../lib/firebase';
 import { api } from '../lib/api';
 
-// Required once per app so the auth popup/tab closes itself after redirect.
+// Required once per app so the auth popup/tab closes itself after redirect
+// (native only — see useGoogleSignInNative below).
 WebBrowser.maybeCompleteAuthSession();
 
-// Native only. Web needs no client ID at all — see useGoogleSignInWeb below.
 const GOOGLE_CONFIG = {
   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
   androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
 };
+const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
 export const isGoogleSignInConfigured =
-  Platform.OS === 'web' || Boolean(GOOGLE_CONFIG.iosClientId || GOOGLE_CONFIG.androidClientId);
+  Platform.OS === 'web'
+    ? Boolean(WEB_CLIENT_ID)
+    : Boolean(GOOGLE_CONFIG.iosClientId || GOOGLE_CONFIG.androidClientId);
 
 async function completeSignIn(result: UserCredential) {
   const profile = await api.upsertMe({
@@ -33,59 +30,113 @@ async function completeSignIn(result: UserCredential) {
   router.replace(profile.dog ? '/discover' : '/basic-info');
 }
 
-// Web: a same-tab redirect through Firebase's own auth handler, instead of
-// expo-auth-session's popup flow.
+// Loads Google's own Identity Services script (once per page) — the
+// official client library Google maintains for exactly this "get a token
+// for a client-side SPA" case.
+let gsiPromise: Promise<void> | null = null;
+function loadGsiScript(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.reject(new Error('Not running on web'));
+  const google = (window as unknown as { google?: { accounts?: { oauth2?: unknown } } }).google;
+  if (google?.accounts?.oauth2) return Promise.resolve();
+  if (gsiPromise) return gsiPromise;
+  gsiPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Google sign-in script'));
+    document.head.appendChild(script);
+  });
+  return gsiPromise;
+}
+
+type TokenClient = { requestAccessToken: () => void };
+
+// Web: Google Identity Services (accounts.google.com/gsi/client) instead of
+// Firebase's own signInWithRedirect/signInWithPopup.
 //
-// The popup flow opens a second window and depends on that window's own
-// script recognizing itself as the auth popup, relaying the result back via
-// window.opener, and closing itself. That handshake is fragile — if
-// window.opener isn't available (popup blockers, some browsers promoting
-// popups to full tabs) the popup has nothing to hand the result to, so it
-// falls through to just rendering the app normally. That is exactly what was
-// observed: a second window landing on /login instead of completing sign-in,
-// with the Google ID token stranded in a window nothing ever reads it from.
+// Both of Firebase's own flows route through its authDomain
+// (tinder4dogs-46593.firebaseapp.com) — a different origin than this app
+// (saransaini.github.io) — and bridge that gap with a cross-origin iframe.
+// That bridge depends on storage access modern Chrome treats as
+// third-party and increasingly blocks by default, which is why
+// getRedirectResult() came back empty even after a real, completed round
+// trip through Google: the iframe bridge that was supposed to deliver the
+// result never got through. (This is also the most likely explanation for
+// why the earlier popup-based expo-auth-session attempt silently failed
+// the same way — same underlying cross-origin dependency.)
 //
-// A same-tab redirect has no such handshake: the browser navigates away to
-// Google and back on its own, and Firebase's SDK persists the pending
-// sign-in across that navigation itself, resolved here via
-// getRedirectResult() on the next load. This also needs no Google Cloud
-// OAuth client of its own — Firebase runs the handshake through its own
-// authDomain — so the app's Firebase project just needs the site's domain
-// added under Authentication > Settings > Authorized domains in the
-// Firebase console.
+// Google's own Identity Services library talks to its popup directly
+// rather than through Firebase's authDomain, so there's no third-party
+// bridge in the path. It hands back an access token, which
+// GoogleAuthProvider.credential() accepts on its own (Firebase verifies it
+// against Google directly) — no ID token required.
 function useGoogleSignInWeb() {
+  const [ready, setReady] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // TEMPORARY — remove once the redirect round trip is confirmed working.
-  // console.log is stripped from production exports, so this is the only
-  // way to see what getRedirectResult() actually did on the live site.
-  const [debugStatus, setDebugStatus] = useState('checking for a pending Google redirect...');
+  const tokenClientRef = useRef<TokenClient | null>(null);
 
   useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        if (!result) {
-          setDebugStatus('getRedirectResult() found nothing pending');
-          return undefined;
-        }
-        setDebugStatus(`getRedirectResult() succeeded for ${result.user.email}`);
-        setSigningIn(true);
-        return completeSignIn(result);
+    if (!WEB_CLIENT_ID) return;
+    let cancelled = false;
+
+    loadGsiScript()
+      .then(() => {
+        if (cancelled) return;
+        const google = (
+          window as unknown as {
+            google: {
+              accounts: {
+                oauth2: {
+                  initTokenClient: (config: {
+                    client_id: string;
+                    scope: string;
+                    callback: (response: { access_token?: string; error?: string }) => void;
+                    error_callback?: (error: { type?: string; message?: string }) => void;
+                  }) => TokenClient;
+                };
+              };
+            };
+          }
+        ).google;
+
+        tokenClientRef.current = google.accounts.oauth2.initTokenClient({
+          client_id: WEB_CLIENT_ID,
+          scope: 'openid email profile',
+          callback: (response) => {
+            if (response.error || !response.access_token) {
+              setError(response.error || 'Google sign-in failed');
+              setSigningIn(false);
+              return;
+            }
+            setSigningIn(true);
+            const credential = GoogleAuthProvider.credential(null, response.access_token);
+            signInWithCredential(auth, credential)
+              .then(completeSignIn)
+              .catch((err) => setError(err instanceof Error ? err.message : 'Google sign-in failed'))
+              .finally(() => setSigningIn(false));
+          },
+          error_callback: (err) => {
+            setError(err?.message || err?.type || 'Google sign-in failed');
+            setSigningIn(false);
+          },
+        });
+        setReady(true);
       })
-      .catch((err) => {
-        const message = err instanceof Error ? err.message : String(err);
-        setDebugStatus(`getRedirectResult() threw: ${message}`);
-        setError(message);
-      })
-      .finally(() => setSigningIn(false));
+      .catch((err) => setError(err instanceof Error ? err.message : 'Could not load Google sign-in'));
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const promptAsync = async () => {
     setError(null);
-    await signInWithRedirect(auth, new GoogleAuthProvider());
+    tokenClientRef.current?.requestAccessToken();
   };
 
-  return { promptAsync, ready: true, signingIn, error, debugStatus };
+  return { promptAsync, ready, signingIn, error };
 }
 
 function useGoogleSignInNative() {
@@ -117,7 +168,7 @@ function useGoogleSignInNative() {
     }
   }, [response]);
 
-  return { promptAsync, ready: !!request, signingIn, error, debugStatus: undefined as string | undefined };
+  return { promptAsync, ready: !!request, signingIn, error };
 }
 
 // Exchanges a Google identity for a Firebase credential, then routes to

@@ -132,10 +132,13 @@ Expo (managed workflow) + TypeScript, using Expo Router for navigation.
 - `src/lib/firebase.ts` — Firebase client SDK init (Auth + Storage +
   Firestore)
 - `src/lib/chat.ts` — direct Firestore reads/writes for chat messages
-- `src/hooks/useGoogleSignIn.ts` — Google sign-in: on web via Firebase's own
-  `signInWithRedirect`/`getRedirectResult`; on native via `expo-auth-session`
-  (works in Expo Go, no custom native build needed), exchanging the Google ID
-  token for a Firebase credential via `signInWithCredential`
+- `src/hooks/useGoogleSignIn.ts` — Google sign-in: on web via Google Identity
+  Services (`accounts.google.com/gsi/client`) directly, not Firebase's own
+  redirect/popup handlers (those route through Firebase's authDomain, a
+  different origin than this site, which browsers' third-party storage
+  blocking breaks); on native via `expo-auth-session` (works in Expo Go, no
+  custom native build needed). Either way the Google token is exchanged for
+  a Firebase credential via `signInWithCredential`
 
 ### Setup
 
@@ -148,34 +151,38 @@ npx expo start
 
 ### Google sign-in setup (optional)
 
-Email/password works with no extra setup. The "Continue with Google" button
-always shows on web — it goes through Firebase's own `signInWithRedirect`
-handler, which needs no Google Cloud OAuth client at all, just:
-
-1. In **Firebase Console → Authentication → Sign-in method**, enable the
-   **Google** provider.
-2. In **Firebase Console → Authentication → Settings → Authorized domains**,
-   add whatever domain the web build is served from (e.g.
-   `saransaini.github.io`, and `localhost` for local dev — `localhost` is
-   included by default).
-
-Native (iOS/Android) is separate and still needs its own OAuth client IDs
-from [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
-since there's no Firebase-hosted redirect handler on those platforms:
+Email/password works with no extra setup. To also show the "Continue with
+Google" button, you need OAuth client IDs from
+[Google Cloud Console](https://console.cloud.google.com/apis/credentials):
 
 1. Create (or pick) a project, then **Create Credentials → OAuth client ID**.
-2. You need one client ID **per native platform you'll test**:
+2. You need one client ID **per platform you'll test**, all under the same
+   project — Google requires separate client IDs because each platform has a
+   different setup:
+   - **Web application** — used by Google Identity Services directly (not
+     Firebase's own `signInWithRedirect`/`signInWithPopup`; those route
+     through Firebase's authDomain, a different origin than wherever this is
+     hosted, and browsers' third-party storage blocking breaks that bridge).
+     Add the site's origin (no path — e.g. `https://saransaini.github.io`,
+     or `http://localhost:8081` for local dev, checking your terminal for
+     the actual port `expo start --web` picks) under **Authorized JavaScript
+     origins**. No redirect URI is needed for this flow.
    - **iOS** — bundle ID must match `mobile/app.json`'s `ios.bundleIdentifier`
      (`com.wagmate.app`, or whatever you change it to).
    - **Android** — package name must match `mobile/app.json`'s
      `android.package`, plus your app's SHA-1 signing certificate fingerprint
      (`eas credentials` can show this for an EAS-built app).
-3. Put the client ID(s) you created in `mobile/.env`:
+3. In **Firebase Console → Authentication → Sign-in method**, enable the
+   **Google** provider.
+4. Put the client ID(s) you created in `mobile/.env`:
    ```
+   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...
    EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=...
    EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=...
    ```
-   Leave either blank if you're not testing that platform.
+   Leave any you're not testing blank — the button only appears once at
+   least one is set, and only the client ID matching the current platform is
+   actually used at runtime.
 
 Scan the QR code with the **Expo Go** app on a real iOS/Android device, or run
 `npx expo start --ios` / `--android` if you have Xcode/Android Studio locally.
