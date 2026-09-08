@@ -56,15 +56,27 @@ async function completeSignIn(result: UserCredential) {
 function useGoogleSignInWeb() {
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // TEMPORARY — remove once the redirect round trip is confirmed working.
+  // console.log is stripped from production exports, so this is the only
+  // way to see what getRedirectResult() actually did on the live site.
+  const [debugStatus, setDebugStatus] = useState('checking for a pending Google redirect...');
 
   useEffect(() => {
     getRedirectResult(auth)
       .then((result) => {
-        if (!result) return undefined;
+        if (!result) {
+          setDebugStatus('getRedirectResult() found nothing pending');
+          return undefined;
+        }
+        setDebugStatus(`getRedirectResult() succeeded for ${result.user.email}`);
         setSigningIn(true);
         return completeSignIn(result);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : 'Google sign-in failed'))
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : String(err);
+        setDebugStatus(`getRedirectResult() threw: ${message}`);
+        setError(message);
+      })
       .finally(() => setSigningIn(false));
   }, []);
 
@@ -73,7 +85,7 @@ function useGoogleSignInWeb() {
     await signInWithRedirect(auth, new GoogleAuthProvider());
   };
 
-  return { promptAsync, ready: true, signingIn, error };
+  return { promptAsync, ready: true, signingIn, error, debugStatus };
 }
 
 function useGoogleSignInNative() {
@@ -105,7 +117,7 @@ function useGoogleSignInNative() {
     }
   }, [response]);
 
-  return { promptAsync, ready: !!request, signingIn, error };
+  return { promptAsync, ready: !!request, signingIn, error, debugStatus: undefined as string | undefined };
 }
 
 // Exchanges a Google identity for a Firebase credential, then routes to
