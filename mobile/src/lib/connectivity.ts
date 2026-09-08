@@ -1,5 +1,27 @@
 import { Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
+import Constants from 'expo-constants';
+
+// NetInfo's web reachability check defaults to a HEAD request against '/'
+// (the domain root) expecting a 200 response. This app is hosted on a
+// subpath (GitHub Pages serves it at /events-app-internal/, not the domain
+// root), so that request 404s. A HEAD against the CURRENT page's own URL
+// would have the same problem for any client-side-only route (e.g.
+// /discover): GitHub Pages serves its 404.html fallback with a genuine 404
+// status so the SPA can still boot there, even though the response body is
+// the normal app — but the reachability check only looks at the status
+// code. Either way NetInfo concludes the internet is unreachable on a
+// device with a perfectly working connection, which is what was showing up
+// live as a false "you're offline" banner (and, once Firestore's own
+// network state was tied to this same signal, real Firestore reads
+// failing with "client is offline" too — on a real, working connection).
+// Pointing the check at a real static file that always exists at this
+// app's own base path (favicon.ico, produced by every export) fixes this
+// without depending on the current route or the hosting root at all.
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  const basePath = Constants.expoConfig?.experiments?.baseUrl || '';
+  NetInfo.configure({ reachabilityUrl: `${window.location.origin}${basePath}/favicon.ico` });
+}
 
 // Single source of truth for "is this device online," shared by the
 // TanStack Query online manager (offlineQuery.ts) and the OfflineBanner, so
