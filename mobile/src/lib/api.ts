@@ -69,31 +69,36 @@ function isPermissionDenied(err: unknown): boolean {
 // whenever Firestore currently believes it's offline — including a stale
 // belief left over from a connectivity blip that has since cleared (see
 // connectivity.ts and offlineQuery.ts for how that belief is tracked and
-// resynced). Retrying once after nudging Firestore back online covers
-// that gap without needing the underlying online/offline signal to be
-// perfectly race-free.
+// resynced). enableNetwork() only tells Firestore it's allowed to try the
+// network again; actually re-establishing its connection (a fresh
+// WebChannel stream) still takes real time, so retrying again immediately
+// hits the same rejection — confirmed live: the very next attempt failed
+// with the identical error. Backing off with real delays between a few
+// attempts gives that reconnection enough time to actually happen.
 function isUnavailable(err: unknown): boolean {
   return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'unavailable';
 }
 
-async function getDoc<T = DocumentData>(reference: DocumentReference<T>): Promise<DocumentSnapshot<T>> {
-  try {
-    return await getDocRaw(reference);
-  } catch (err) {
-    if (!isUnavailable(err)) throw err;
-    await enableNetwork(firestore).catch(() => {});
-    return await getDocRaw(reference);
+const OFFLINE_RETRY_DELAYS_MS = [500, 1500, 3000];
+
+async function withOfflineRetry<T>(run: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await run();
+    } catch (err) {
+      if (!isUnavailable(err) || attempt >= OFFLINE_RETRY_DELAYS_MS.length) throw err;
+      await enableNetwork(firestore).catch(() => {});
+      await new Promise((resolve) => setTimeout(resolve, OFFLINE_RETRY_DELAYS_MS[attempt]));
+    }
   }
 }
 
+async function getDoc<T = DocumentData>(reference: DocumentReference<T>): Promise<DocumentSnapshot<T>> {
+  return withOfflineRetry(() => getDocRaw(reference));
+}
+
 async function getDocs<T = DocumentData>(q: Query<T>): Promise<QuerySnapshot<T>> {
-  try {
-    return await getDocsRaw(q);
-  } catch (err) {
-    if (!isUnavailable(err)) throw err;
-    await enableNetwork(firestore).catch(() => {});
-    return await getDocsRaw(q);
-  }
+  return withOfflineRetry(() => getDocsRaw(q));
 }
 
 function buildDog(input: Partial<Dog> | undefined, existing?: Dog): Dog | undefined {
