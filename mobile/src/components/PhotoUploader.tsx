@@ -64,7 +64,13 @@ export function PhotoUploader({ photos, onAdd, onRemove }: Props) {
       const uid = auth.currentUser?.uid || 'anonymous';
       const path = `dog-photos/${uid}/${Date.now()}.jpg`;
       const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, blob);
+      // blob.type isn't reliably 'image/jpeg' on native — fetch()ing a local
+      // file:// URI doesn't set it the way a browser's canvas.toBlob() does
+      // on web — and storage.rules requires a matching image/* contentType,
+      // so an unset one gets rejected as storage/unauthorized rather than
+      // just stored untyped. Passed explicitly since manipulateAsync above
+      // always saves as JPEG regardless of platform.
+      await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
       const url = await getDownloadURL(storageRef);
       onAdd(url);
     } catch (err) {
