@@ -64,6 +64,14 @@ export function PhotoUploader({ photos, onAdd, onRemove }: Props) {
       const uid = auth.currentUser?.uid || 'anonymous';
       const path = `dog-photos/${uid}/${Date.now()}.jpg`;
       const storageRef = ref(storage, path);
+      // TEMPORARY — remove once storage/unauthorized is diagnosed.
+      console.log('[upload debug]', {
+        uid,
+        email: auth.currentUser?.email,
+        blobType: blob.type,
+        blobSize: blob.size,
+        hasIdToken: !!(await auth.currentUser?.getIdToken().catch((e) => `ERROR: ${e}`)),
+      });
       // blob.type isn't reliably 'image/jpeg' on native — fetch()ing a local
       // file:// URI doesn't set it the way a browser's canvas.toBlob() does
       // on web — and storage.rules requires a matching image/* contentType,
