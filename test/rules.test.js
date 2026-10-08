@@ -265,6 +265,14 @@ describe('firestore.rules', () => {
             await assertSucceeds(getDoc(doc(db(ALICE), 'matches', ALICE_BOB_MATCH)));
         });
 
+        // Documents a trap the app fell into: you cannot "check whether a
+        // match exists yet" by reading it, because for a missing match the
+        // rule has no resource to check participation against. api.swipe()
+        // therefore attempts the create first and only reads on refusal.
+        it('denies reading a match that does not exist yet, even to its would-be participants', async () => {
+            await assertFails(getDoc(doc(db(ALICE), 'matches', ALICE_BOB_MATCH)));
+        });
+
         it('denies an outsider reading it', async () => {
             await seedMatch([ALICE, BOB]);
             await assertFails(getDoc(doc(db(CAROL), 'matches', ALICE_BOB_MATCH)));

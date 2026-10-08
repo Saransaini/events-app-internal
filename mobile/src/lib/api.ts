@@ -274,11 +274,6 @@ export const api = {
     const uids = [uid, body.targetUid].sort();
     const matchRef = doc(firestore, 'matches', `${uids[0]}_${uids[1]}`);
 
-    const existing = await getDoc(matchRef);
-    if (existing.exists()) {
-      return { matched: true, match: { _id: existing.id, ...(existing.data() as Omit<Match, '_id'>) } };
-    }
-
     // Whether this like completes a match is decided by the security rules,
     // not here: creating the match doc is only permitted when the other
     // person's "like" already exists. That keeps the check server-side (a
@@ -286,11 +281,29 @@ export const api = {
     // swipes to find out who liked them. A denial is the normal "not mutual
     // yet" answer, so it's translated back into matched:false rather than
     // surfaced as an error.
+    //
+    // The create is attempted BEFORE any read of the match. This used to
+    // getDoc() it first to see if it already existed, but the match read
+    // rule checks `request.auth.uid in resource.data.uids`, and for a match
+    // that doesn't exist yet `resource` is null, so that read was always
+    // refused — every like threw before reaching the create below, and no
+    // match could ever be made. (Caught by the end-to-end test.)
     try {
       await setDoc(matchRef, { uids, createdAt: serverTimestamp() });
     } catch (err) {
-      if (isPermissionDenied(err)) return { matched: false };
-      throw err;
+      if (!isPermissionDenied(err)) throw err;
+      // Refused either because the like isn't mutual yet, or because the
+      // match already exists (re-writing it is an update, which the rules
+      // forbid). Only in the second case may we read it back.
+      try {
+        const existing = await getDoc(matchRef);
+        if (existing.exists()) {
+          return { matched: true, match: { _id: existing.id, ...(existing.data() as Omit<Match, '_id'>) } };
+        }
+      } catch (readErr) {
+        if (!isPermissionDenied(readErr)) throw readErr;
+      }
+      return { matched: false };
     }
 
     const created = await getDoc(matchRef);
