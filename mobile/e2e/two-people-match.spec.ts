@@ -93,7 +93,9 @@ async function seeCardAndLike(liker: Person, liked: Person) {
   await page.goto('/discover');
   // The other person's card, with their dog and photo.
   await expect(text(page, liked.name).first()).toBeVisible();
-  await expect(text(page, `with ${liked.dog}`).first()).toBeVisible();
+  await expect(text(page, `with ${liked.dog} (Golden Retriever)`).first()).toBeVisible();
+  // Their uploaded photo actually loads from Storage on the card.
+  await expect(page.locator('img[src*="dog-photos"]').filter({ visible: true }).first()).toBeVisible();
   await text(page, 'Like').click();
   await expect(text(page, NO_ONE_LEFT)).toBeVisible();
 }

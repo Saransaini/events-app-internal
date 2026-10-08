@@ -6,10 +6,14 @@ service firebase.storage {
     // other users' photos), writable only by the owner of that uid folder.
     match /dog-photos/{userId}/{fileName} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null
+      allow create, update: if request.auth != null
                    && request.auth.uid == userId
                    && request.resource.size < 10 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
+      // Separate from create/update: a delete has no incoming file, so
+      // request.resource is null and the size/type checks above would make
+      // every delete fail — including an owner removing their own photo.
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
