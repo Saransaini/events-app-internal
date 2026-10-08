@@ -1,0 +1,104 @@
+name: Test Wagmate
+
+# Runs every automated check on every push (to any branch) and pull request.
+# Everything that needs Firebase runs against the local emulators started
+# inside the job — never the real project — so this is safe to run as often
+# as you like. Unlike deploy-wagmate.yml, this never publishes anything.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app-builds:
+    name: Typecheck + web and iOS bundles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Install
+        working-directory: mobile
+        run: npm ci --legacy-peer-deps
+      - name: Typecheck
+        working-directory: mobile
+        run: npx tsc --noEmit
+      - name: Web bundle builds
+        working-directory: mobile
+        run: npx expo export --platform web --output-dir /tmp/web
+      # Bundles the iOS JavaScript (not a full Xcode build): catches anything
+      # that breaks only in the native code path, like photoUpload.native.ts.
+      - name: iOS bundle builds
+        working-directory: mobile
+        run: npx expo export --platform ios --output-dir /tmp/ios
+
+  security-rules:
+    name: Security rules (Firestore + Storage)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-v1
+      - name: Install
+        run: npm ci --legacy-peer-deps
+      - name: Run rules tests against the emulators
+        run: npm run test:security
+
+  end-to-end:
+    name: Two-person end-to-end test (web)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-v1
+      - name: Install
+        working-directory: mobile
+        run: npm ci --legacy-peer-deps
+      - name: Install browser
+        working-directory: mobile
+        run: npx playwright install --with-deps chromium
+      - name: Run end-to-end test
+        working-directory: mobile
+        run: npm run test:e2e
+      - name: Keep the report and failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            mobile/e2e-report
+            mobile/e2e-results
+          retention-days: 14

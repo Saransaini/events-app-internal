@@ -90,19 +90,40 @@ npx firebase-tools deploy --only firestore:indexes,firestore:rules
 
 ### Tests
 
-Everything runs against the Firestore emulator rather than a real project.
+Everything runs against the Firebase emulators rather than a real project
+(they need Java installed). `.github/workflows/test-wagmate.yml` runs all of
+it on every push and pull request; it never deploys anything.
 
 **Security rules** — the important suite, since the rules are now the only
 thing protecting user data:
 
 ```bash
-npm run test:rules
+npm run test:security   # Firestore + Storage rules together
+npm run test:rules      # Firestore only
+npm run test:storage    # Storage only
 ```
 
 37 cases in `test/rules.test.js`, each protection paired with a test proving
 it denies: no reading another user's private profile, no "who liked me" leak,
 no fabricating a match without a genuine mutual like, no forging a message as
 someone else, no outsider reading a conversation.
+
+`test/storage.rules.test.js` does the same for dog photos (only into your
+own folder, only images, under 10 MB, signed-in users only), and also sends
+the exact raw upload request the native app makes (see below) with a real
+Auth-emulator token, proving that request shape is one the rules accept.
+
+**End-to-end** — two people using the real web build side by side:
+
+```bash
+cd mobile && npm run test:e2e
+```
+
+Builds the web app pointed at the emulators, then drives two browsers with
+Playwright: both sign up and create a profile with a photo, like each other,
+match, chat in real time both ways, and one unmatches, after which the match
+and conversation are gone for both. A failure leaves screenshots and a trace
+in `mobile/e2e-results/`.
 
 **Backend** (the now-unused Express routes):
 
@@ -132,6 +153,13 @@ Expo (managed workflow) + TypeScript, using Expo Router for navigation.
 - `src/lib/firebase.ts` — Firebase client SDK init (Auth + Storage +
   Firestore)
 - `src/lib/chat.ts` — direct Firestore reads/writes for chat messages
+- `src/lib/photoUpload.ts` / `photoUpload.native.ts` — dog photo upload.
+  Web uses the Firebase Storage SDK. iOS/Android instead stream the file
+  from disk with `expo-file-system` to Storage's REST endpoint, attaching
+  the user's ID token explicitly: the SDK's upload path kept failing with
+  `storage/unauthorized` on the native iOS build, and this path takes React
+  Native's Blob handling and the SDK's internal token wiring out of the
+  picture, and reports the server's actual error if it is still refused
 - `src/hooks/useGoogleSignIn.ts` — Google sign-in: on web via Google Identity
   Services (`accounts.google.com/gsi/client`) directly, not Firebase's own
   redirect/popup handlers (those route through Firebase's authDomain, a

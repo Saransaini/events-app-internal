@@ -3,9 +3,7 @@ import { View, Pressable, Text, StyleSheet, ActivityIndicator } from 'react-nati
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../lib/firebase';
-import { auth } from '../lib/firebase';
+import { uploadDogPhoto } from '../lib/photoUpload';
 
 interface Props {
   photos: string[];
@@ -59,27 +57,10 @@ export function PhotoUploader({ photos, onAdd, onRemove }: Props) {
         { compress: 0.7, format: SaveFormat.JPEG }
       );
 
-      const response = await fetch(resized.uri);
-      const blob = await response.blob();
-      const uid = auth.currentUser?.uid || 'anonymous';
-      const path = `dog-photos/${uid}/${Date.now()}.jpg`;
-      const storageRef = ref(storage, path);
-      // TEMPORARY — remove once storage/unauthorized is diagnosed.
-      console.log('[upload debug]', {
-        uid,
-        email: auth.currentUser?.email,
-        blobType: blob.type,
-        blobSize: blob.size,
-        hasIdToken: !!(await auth.currentUser?.getIdToken().catch((e) => `ERROR: ${e}`)),
-      });
-      // blob.type isn't reliably 'image/jpeg' on native — fetch()ing a local
-      // file:// URI doesn't set it the way a browser's canvas.toBlob() does
-      // on web — and storage.rules requires a matching image/* contentType,
-      // so an unset one gets rejected as storage/unauthorized rather than
-      // just stored untyped. Passed explicitly since manipulateAsync above
-      // always saves as JPEG regardless of platform.
-      await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
-      const url = await getDownloadURL(storageRef);
+      // manipulateAsync above always saves a JPEG, which is what
+      // uploadDogPhoto declares as the content type on every platform.
+      // (Web and native upload differently — see src/lib/photoUpload*.ts.)
+      const url = await uploadDogPhoto(resized.uri);
       onAdd(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Photo upload failed');

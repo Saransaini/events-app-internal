@@ -47,9 +47,17 @@ export default function MatchChat() {
   }
 
   function confirmUnmatch() {
+    const message = `This permanently deletes your conversation with ${other?.displayName || 'this person'}. This can't be undone.`;
+    // react-native-web's Alert.alert does nothing at all, so on the web
+    // build the Unmatch button used to silently do nothing. The browser's
+    // own confirm dialog is the web equivalent.
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Unmatch?\n\n${message}`)) handleUnmatch();
+      return;
+    }
     Alert.alert(
       'Unmatch?',
-      `This permanently deletes your conversation with ${other?.displayName || 'this person'}. This can't be undone.`,
+      message,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Unmatch', style: 'destructive', onPress: handleUnmatch },
@@ -65,7 +73,9 @@ export default function MatchChat() {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       router.replace('/matches');
     } catch (err) {
-      Alert.alert('Failed to unmatch', err instanceof Error ? err.message : 'Please try again.');
+      const reason = err instanceof Error ? err.message : 'Please try again.';
+      if (Platform.OS === 'web') window.alert(`Failed to unmatch: ${reason}`);
+      else Alert.alert('Failed to unmatch', reason);
     } finally {
       setUnmatching(false);
     }

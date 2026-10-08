@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeAuth, browserLocalPersistence } from 'firebase/auth';
-import { getStorage } from 'firebase/storage';
+import { initializeAuth, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // @firebase/auth's package.json declares a "types" condition ahead of its
@@ -17,7 +17,7 @@ import { getReactNativePersistence } from '@firebase/auth';
 // firestore from @firebase/firestore directly to get the RN-specific build
 // with correct networking (long-polling) for React Native. Unlike auth, its
 // public types are unified across platforms, so no suppression is needed.
-import { getFirestore } from '@firebase/firestore';
+import { getFirestore, connectFirestoreEmulator } from '@firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -43,3 +43,15 @@ export const auth =
 
 export const storage = getStorage(app);
 export const firestore = getFirestore(app);
+
+// Set only for automated tests (and optional local dev): points every Firebase
+// call at the local emulator suite instead of the real project, so tests can
+// create users, matches and photos without touching anyone's real data.
+// Production builds never set it.
+export const emulatorHost = process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST || null;
+
+if (emulatorHost) {
+  connectAuthEmulator(auth, `http://${emulatorHost}:9099`, { disableWarnings: true });
+  connectFirestoreEmulator(firestore, emulatorHost, 8080);
+  connectStorageEmulator(storage, emulatorHost, 9199);
+}

@@ -7,7 +7,9 @@
     "start": "node server.js",
     "test": "nyc --temp-dir=tmp mocha --exit",
     "test:emulator": "npx --yes firebase-tools emulators:exec --only firestore \"npm test\"",
-    "test:rules": "npx --yes firebase-tools emulators:exec --only firestore --project wagmate-rules-test \"npx mocha test/rules.test.js --timeout 20000\""
+    "test:rules": "npx --yes firebase-tools emulators:exec --only firestore --project wagmate-rules-test \"npx mocha test/rules.test.js --timeout 20000\"",
+    "test:storage": "npx --yes firebase-tools emulators:exec --only firestore,auth,storage --project wagmate-rules-test \"npx mocha test/storage.rules.test.js --timeout 20000\"",
+    "test:security": "npx --yes firebase-tools emulators:exec --only firestore,auth,storage --project wagmate-rules-test \"npx mocha test/rules.test.js test/storage.rules.test.js --timeout 20000\""
   },
   "keywords": [],
   "author": "",
