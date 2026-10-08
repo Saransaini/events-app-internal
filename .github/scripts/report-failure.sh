@@ -6,5 +6,5 @@
 log="$1"; title="$2"
 [ -f "$log" ] || exit 0
 # Annotations are single-line; GitHub decodes %0A back into newlines.
-body=$(tail -n 120 "$log" | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/%/%25/g' -e 's/\r//g' | awk '{printf "%s%%0A", $0}')
+body=$(grep -v -e "@firebase/firestore" -e "false for '" -e "evaluation error at" "$log" | tail -n 90 | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/%/%25/g' -e 's/\r//g' | awk '{printf "%s%%0A", $0}')
 echo "::error title=${title}::${body}"

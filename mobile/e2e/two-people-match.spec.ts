@@ -54,13 +54,9 @@ async function signUpAndCreateProfile(person: Person) {
   await field(page, 'Password').fill('test-password-123');
   await text(page, 'Sign Up').click();
 
-  // Signing in can briefly land on Discover before the signup screen moves
-  // on to onboarding; either way the next screen is the dog's details.
-  const dogDetails = text(page, 'Tell us about your dog');
-  const createProfile = text(page, 'Create a profile');
-  await expect(dogDetails.or(createProfile)).toBeVisible();
-  if (await createProfile.isVisible()) await createProfile.click();
-  await expect(dogDetails).toBeVisible();
+  // Signing in briefly lands on Discover ("Create a profile") before the
+  // signup screen finishes saving the account and moves on to onboarding.
+  await expect(text(page, 'Tell us about your dog')).toBeVisible({ timeout: 30_000 });
 
   await field(page, 'Name').fill(person.dog);
   await field(page, 'Breed').fill('Golden Retriever');
