@@ -26,6 +26,27 @@ jobs:
       - name: Install
         working-directory: mobile
         run: npm ci --legacy-peer-deps && npx playwright install --with-deps chromium
+      # Ask Firestore's REST API directly, so its own error message (database
+      # missing, API disabled, key restricted, ...) is visible rather than the
+      # browser SDK's generic "client is offline".
+      - name: Ask Firestore directly
+        if: always()
+        run: |
+          KEY=AIzaSyBsth3CKUxcTYMWZNTbC3FS0lbYAG9Vj34
+          BASE="https://firestore.googleapis.com/v1/projects/tinder4dogs-46593/databases/(default)/documents"
+          {
+            echo "--- unauthenticated read, no referrer"
+            curl -sS -m 30 "$BASE/publicProfiles/__live_connectivity_check__?key=$KEY"
+            echo; echo "--- same, with the live site as referrer"
+            curl -sS -m 30 -H "Referer: https://saransaini.github.io/events-app-internal/" "$BASE/publicProfiles/__live_connectivity_check__?key=$KEY"
+            echo; echo "--- database metadata"
+            curl -sS -m 30 "https://firestore.googleapis.com/v1/projects/tinder4dogs-46593/databases/(default)?key=$KEY"
+            echo; echo "--- Listen endpoint (what the browser SDK uses)"
+            curl -sS -m 30 -o /dev/null -w "HTTP %{http_code}\n" -H "Referer: https://saransaini.github.io/events-app-internal/" \
+              "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?database=projects%2Ftinder4dogs-46593%2Fdatabases%2F(default)&VER=8&RID=1&CVER=22&X-HTTP-Session-Id=gsessionid&zx=x&t=1&key=$KEY" -X POST -d "count=0"
+          } 2>&1 | tee /tmp/rest.log
+          ../.github/scripts/report-failure.sh /tmp/rest.log "Firestore REST responses" || true
+        working-directory: mobile
       - name: Check the live site
         working-directory: mobile
         env:
