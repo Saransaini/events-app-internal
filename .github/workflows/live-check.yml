@@ -1,0 +1,41 @@
+name: Live site check
+
+# Read-only check of the deployed site against the real Firebase project:
+# the page loads, and a browser on it can reach Firestore. Creates no
+# accounts and writes nothing. (Only push-triggered for now: schedule and
+# workflow_run triggers only work once this file is on the default branch.)
+
+on:
+  push:
+    branches:
+      - claude/wagmate-tests
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Install
+        working-directory: mobile
+        run: npm ci --legacy-peer-deps && npx playwright install --with-deps chromium
+      - name: Check the live site
+        working-directory: mobile
+        env:
+          LIVE_URL: https://saransaini.github.io/events-app-internal/
+          # Same public web config the deploy workflow compiles into the site.
+          EXPO_PUBLIC_FIREBASE_API_KEY: AIzaSyBsth3CKUxcTYMWZNTbC3FS0lbYAG9Vj34
+          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: tinder4dogs-46593.firebaseapp.com
+          EXPO_PUBLIC_FIREBASE_PROJECT_ID: tinder4dogs-46593
+          EXPO_PUBLIC_FIREBASE_APP_ID: 1:3345060430:web:4a051c0aa4f820ca66a91f
+        run: npx playwright test -c playwright.live.config.ts 2>&1 | tee /tmp/live.log; exit ${PIPESTATUS[0]}
+      - name: Report result
+        if: always()
+        run: .github/scripts/report-failure.sh /tmp/live.log "Live site check output"
